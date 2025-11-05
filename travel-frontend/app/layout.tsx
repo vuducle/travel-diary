@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Karla, Merriweather, Geist_Mono } from 'next/font/google';
 import './globals.css';
+import Footer from '@/components/footer';
 
 // Body copy
 const karla = Karla({
@@ -38,7 +39,8 @@ export default function RootLayout({
       <body
         className={`${karla.variable} ${merriweather.variable} ${geistMono.variable} antialiased`}
       >
-        {children}
+        <main>{children}</main>
+        <Footer />
       </body>
     </html>
   );
