@@ -1,0 +1,245 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                     String         @id @default(uuid())
+  email                  String         @unique
+  username               String?        @unique
+  password               String
+  name                   String?
+  avatarUrl              String?
+  bio                    String?
+  location               String?
+  role                   Role           @default(USER)
+  suspendedAt            DateTime?
+  suspendedReason        String?
+  suspendedById          String?
+  suspendedBy            User?          @relation("UserSuspendedBy", fields: [suspendedById], references: [id])
+  suspendedUsers         User[]         @relation("UserSuspendedBy")
+  trips                  Trip[]
+  sentFriendRequests     Friendship[]   @relation("FriendshipRequester")
+  receivedFriendRequests Friendship[]   @relation("FriendshipAddressee")
+  sentMessages           Message[]      @relation("MessageSender")
+  receivedMessages       Message[]      @relation("MessageReceiver")
+  tripLikes              TripLike[]
+  tripComments           TripComment[]
+  notifications          Notification[]
+  auditLogs              AuditLog[]     @relation("AuditActor")
+  createdAt              DateTime       @default(now())
+  updatedAt              DateTime       @updatedAt
+}
+
+model Trip {
+  id          String        @id @default(uuid())
+  title       String
+  description String?
+  startDate   DateTime?
+  endDate     DateTime?
+  coverImage  String?
+  visibility  Visibility    @default(PRIVATE)
+  user        User          @relation(fields: [userId], references: [id])
+  userId      String
+  locations   Location[]
+  entries     Entry[]
+  likes       TripLike[]
+  comments    TripComment[]
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+}
+
+model Location {
+  id        String     @id @default(uuid())
+  name      String
+  country   String?
+  lat       Float?
+  lng       Float?
+  trip      Trip       @relation(fields: [tripId], references: [id])
+  tripId    String
+  parent    Location?  @relation("LocationHierarchy", fields: [parentId], references: [id])
+  parentId  String?
+  children  Location[] @relation("LocationHierarchy")
+  entries   Entry[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  @@index([tripId])
+  @@index([parentId])
+}
+
+model Entry {
+  id         Int          @id @default(autoincrement())
+  title      String
+  content    String?
+  date       DateTime     @default(now())
+  trip       Trip         @relation(fields: [tripId], references: [id])
+  tripId     String
+  location   Location?    @relation(fields: [locationId], references: [id])
+  locationId String?
+  images     EntryImage[]
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+}
+
+model EntryImage {
+  id        String   @id @default(uuid())
+  url       String
+  order     Int      @default(0)
+  entry     Entry    @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  entryId   Int
+  createdAt DateTime @default(now())
+
+  @@index([entryId])
+  @@index([order])
+}
+
+model TokenBlacklist {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([token])
+  @@index([expiresAt])
+}
+
+model Friendship {
+  id          String           @id @default(uuid())
+  requester   User             @relation("FriendshipRequester", fields: [requesterId], references: [id], onDelete: Cascade)
+  requesterId String
+  addressee   User             @relation("FriendshipAddressee", fields: [addresseeId], references: [id], onDelete: Cascade)
+  addresseeId String
+  status      FriendshipStatus @default(PENDING)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  @@unique([requesterId, addresseeId])
+  @@index([requesterId])
+  @@index([addresseeId])
+  @@index([status])
+}
+
+model Message {
+  id         String    @id @default(uuid())
+  content    String
+  sender     User      @relation("MessageSender", fields: [senderId], references: [id], onDelete: Cascade)
+  senderId   String
+  receiver   User      @relation("MessageReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
+  receiverId String
+  isRead     Boolean   @default(false)
+  readAt     DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@index([senderId])
+  @@index([receiverId])
+  @@index([createdAt])
+  @@index([isRead])
+}
+
+enum Role {
+  ADMIN
+  USER
+}
+
+enum FriendshipStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
+enum Visibility {
+  PRIVATE
+  FRIENDS
+  PUBLIC
+}
+
+model TripLike {
+  id        String   @id @default(uuid())
+  trip      Trip     @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  tripId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  createdAt DateTime @default(now())
+
+  @@unique([tripId, userId])
+  @@index([tripId])
+  @@index([userId])
+}
+
+model TripComment {
+  id        String        @id @default(uuid())
+  content   String
+  trip      Trip          @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  tripId    String
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  parent    TripComment?  @relation("TripCommentToTripComment", fields: [parentId], references: [id])
+  parentId  String?
+  replies   TripComment[] @relation("TripCommentToTripComment")
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  @@index([tripId])
+  @@index([userId])
+  @@index([parentId])
+}
+
+enum NotificationType {
+  LIKE
+  COMMENT
+  REPLY
+  FRIEND_REQUEST
+  FRIEND_ACCEPTED
+  MESSAGE
+  TRIP_VISIBILITY_CHANGED
+  SYSTEM
+}
+
+model Notification {
+  id         String           @id @default(uuid())
+  user       User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId     String
+  type       NotificationType
+  entityType String?
+  entityId   String?
+  metadata   Json?
+  readAt     DateTime?
+  createdAt  DateTime         @default(now())
+
+  @@index([userId, createdAt])
+  @@index([userId, readAt])
+}
+
+enum AdminAction {
+  DELETE_TRIP
+  DELETE_COMMENT
+  SUSPEND_USER
+  UNSUSPEND_USER
+}
+
+model AuditLog {
+  id         String      @id @default(uuid())
+  actor      User?       @relation("AuditActor", fields: [actorId], references: [id], onDelete: SetNull)
+  actorId    String?
+  action     AdminAction
+  entityType String
+  entityId   String
+  details    Json?
+  createdAt  DateTime    @default(now())
+
+  @@index([actorId])
+  @@index([entityType, entityId])
+  @@index([createdAt])
+}

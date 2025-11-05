@@ -1,0 +1,90 @@
+# ------------------------------------------------------
+# THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+# ------------------------------------------------------
+
+"""
+A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
+"""
+scalar DateTime
+
+type EntryImageModel {
+  createdAt: DateTime!
+  id: ID!
+  order: Int!
+  url: String!
+}
+
+type EntryModel {
+  content: String
+  createdAt: DateTime!
+  id: ID!
+  images: [EntryImageModel!]!
+  locationId: String
+  tripId: String!
+}
+
+type EntryPage {
+  hasNextPage: Boolean!
+  items: [EntryModel!]!
+  limit: Int!
+  page: Int!
+  total: Int!
+  totalPages: Int!
+}
+
+type LocationModel {
+  id: ID!
+  name: String!
+  parentId: String
+}
+
+type LocationWithEntriesModel {
+  entries: [EntryModel!]!
+  location: LocationModel!
+}
+
+type LocationWithEntriesPage {
+  hasNextPage: Boolean!
+  items: [LocationWithEntriesModel!]!
+  limit: Int!
+  page: Int!
+  total: Int!
+  totalPages: Int!
+}
+
+type Query {
+  entriesByTrip(limit: Int, page: Int, tripId: String!): EntryPage!
+  locationsWithEntries(limit: Int, page: Int, tripId: String!): LocationWithEntriesPage!
+  myTrips(limit: Int, page: Int): TripPage!
+  trip(id: ID!): TripModel
+  userTrips(limit: Int, ownerId: String!, page: Int): TripPage!
+}
+
+type TripModel {
+  coverImage: String
+  createdAt: DateTime!
+  description: String
+  endDate: DateTime
+  id: ID!
+  startDate: DateTime
+  title: String!
+  updatedAt: DateTime!
+  userId: String!
+  visibility: Visibility!
+}
+
+type TripPage {
+  hasNextPage: Boolean!
+  items: [TripModel!]!
+  limit: Int!
+  page: Int!
+  total: Int!
+  totalPages: Int!
+}
+
+"""Trip visibility setting"""
+enum Visibility {
+  FRIENDS
+  PRIVATE
+  PUBLIC
+}
