@@ -1,146 +1,176 @@
-# Travel Diary – Backend
+# Travel Diary Monorepo
 
-Backend for the Travel Diary application (NestJS + Prisma + PostgreSQL). The frontend is currently WIP; this README focuses on the backend only.
+Backend is production-ready; frontend is WIP. This README focuses on the backend located in `travel-backend/`.
 
-## Tech stack
-
-- NestJS (REST + GraphQL)
-- Prisma (PostgreSQL)
-- JWT authentication
-- Multer for uploads, Sharp for image optimization
-- Swagger UI at /api
-
-## Requirements
-
-- Node.js 18+
-- PostgreSQL 13+
-
-## Environment
-
-The app constructs `DATABASE_URL` from the following env vars (set in `.env`):
+## Project structure
 
 ```
+travel-backend/   # NestJS + Prisma + Redis backend (ready)
+travel-frontend/  # Next.js frontend (work in progress)
+```
+
+## Backend overview (NestJS + Prisma + Redis)
+
+Feature highlights:
+
+- REST + GraphQL API (Apollo). Swagger/OpenAPI at `/api`, GraphQL Playground at `/graphql` (dev only)
+- JWT auth with logout token blacklist stored in Redis
+- Trips, Locations (parent/child), Entries with multiple images (Sharp optimization)
+- Likes and comments on trips
+- Socket.IO chat gateway (token via Authorization header or handshake auth)
+- Static uploads served from `/uploads`
+
+The root path `/` returns a small HTML landing page with a link to `/api`.
+
+## Prerequisites
+
+- Node.js 20+
+- PostgreSQL 13+
+- Redis 6+
+
+On macOS (zsh), you can install services with Homebrew:
+
+```zsh
+brew install postgresql@14 redis
+brew services start postgresql@14
+brew services start redis
+```
+
+## Environment variables
+
+You can use a single `DATABASE_URL` or provide component variables; the app will construct `DATABASE_URL` from the component values when absent.
+
+- PORT: Port to run the API (default 3000)
+- DB_USER, DB_PASSWORD, DB_HOST, DB_PORT, DB_NAME: Components for `DATABASE_URL` (defaults: postgres/password/localhost/5432/travel_db)
+- DATABASE_URL: Postgres connection string (overrides components), e.g. `postgresql://user:pass@localhost:5432/travel_db?schema=public`
+- JWT_SECRET: Secret for signing JWTs (default: change_this_secret)
+- JWT_EXPIRES_IN: Token TTL; number of seconds or timespan string like `"1h"`, `"7d"` (default: 3600)
+- REDIS_URL: Redis connection string (default: redis://localhost:6379)
+- RELAX_GRAPHQL_CSP: Set `true` to relax Helmet CSP on `/graphql` even when `NODE_ENV=production` locally
+
+Example `.env`:
+
+```env
 PORT=3000
+# Compose DATABASE_URL from components if omitted
 DB_USER=postgres
 DB_PASSWORD=password
 DB_HOST=localhost
 DB_PORT=5432
 DB_NAME=travel_db
-# Optional: relax CSP for GraphQL Playground in dev
-RELAX_GRAPHQL_CSP=true
+
+# Or provide DATABASE_URL directly
+# DATABASE_URL=postgresql://postgres:password@localhost:5432/travel_db?schema=public
+
+JWT_SECRET=supersecret_dev_only
+JWT_EXPIRES_IN=1h
+REDIS_URL=redis://localhost:6379
 ```
 
-## Setup & run
+## Install and setup
 
-```bash
+```zsh
 cd travel-backend
 yarn install
 
-# create DB (optional helper)
-yarn run db:create
-
-# prisma
-yarn run prisma:generate
-yarn prisma migrate dev
-# or push + seed
-yarn run prisma:push
-yarn run db:seed
-
-# start dev
-yarn run start:dev
+# One-shot DB setup: create -> prisma generate -> schema push -> seed
+yarn db:setup
 ```
 
-Swagger docs: http://localhost:3000/api
+What `db:setup` does:
 
-Uploads are served from: http://localhost:3000/uploads/
+- Creates the Postgres database if it doesn’t exist (requires `psql`)
+- Generates the Prisma client
+- Pushes the schema to the database
+- Runs the seed script
 
-## Uploads & file storage
+If you prefer manual Prisma steps:
 
-Uploaded files are stored under `uploads/`. Preset multer configs live in `src/common/helpers/multer.helper.ts`:
-
-- `avatarUploadConfig` -> `./uploads/avatars`
-- `profileCoverUploadConfig` -> `./uploads/covers`
-- `tripCoverUploadConfig` -> `./uploads/trips`
-- `entryImageUploadConfig` -> `./uploads/entries`
-- `locationCoverImageUploadConfig` -> `./uploads/locations`
-- `profileUploadsMulterConfig()` -> handles both `avatar` and `coverImage` in one request
-
-Optimization (resize + convert to webp) is done in `src/common/helpers/image.helper.ts`. If `sharp` is not installed, the original file is kept.
-
-Accepted types and limits vary per config, typically: jpg, jpeg, png, webp; 5–10MB per file.
-
-## Auth
-
-Most endpoints are protected with JWT Bearer auth (scheme name `jwt` in Swagger). Obtain a token from the auth flow and include `Authorization: Bearer <token>` in requests.
-
-## Key endpoints (REST)
-
-### Users
-
-- `GET /users/profile` — current profile
-- `PATCH /users/profile` — update profile fields and optionally upload both `avatar` and `coverImage` in a single request (multipart/form-data)
-
-Example (update with both files):
-
-```bash
-curl -X PATCH "http://localhost:3000/users/profile" \
-  -H "Authorization: Bearer $TOKEN" \
-  -F "name=Julia Nguyen" \
-  -F "bio=Travel enthusiast" \
-  -F "location=Nam Dinh, Viet Nam" \
-  -F "avatar=@/path/to/avatar.jpg" \
-  -F "coverImage=@/path/to/cover.png"
+```zsh
+yarn prisma:generate
+yarn prisma:push
+yarn db:seed
 ```
 
-- `GET /users/search?username=<q>` — search users by username (partial, case-insensitive)
+## Run the API
 
-### Locations
+```zsh
+# Development (watch)
+yarn start:dev
 
-- `POST /locations` — create a location (multipart). Optional `coverImage`.
-
-```bash
-curl -X POST "http://localhost:3000/locations" \
-  -H "Authorization: Bearer $TOKEN" \
-  -F "name=Ho Chi Minh City" \
-  -F "tripId=your-trip-id" \
-  -F "coverImage=@/path/to/cover.jpg"
+# Production build
+yarn build
+yarn start:prod
 ```
 
-- `PATCH /locations/:id` — update fields; optional `coverImage` in the same multipart request.
+Once running:
 
-```bash
-curl -X PATCH "http://localhost:3000/locations/<id>" \
-  -H "Authorization: Bearer $TOKEN" \
-  -F "name=Saigon Updated" \
-  -F "coverImage=@/path/to/new-cover.png"
-```
+- Swagger docs: http://localhost:3000/api (authorize with Bearer JWT using the `jwt` scheme)
+- GraphQL (dev only): http://localhost:3000/graphql
+- Uploads: http://localhost:3000/uploads/
 
-- `PATCH /locations/:id/cover` — replace only the cover image.
+## Authentication
 
-```bash
-curl -X PATCH "http://localhost:3000/locations/<id>/cover" \
-  -H "Authorization: Bearer $TOKEN" \
-  -F "coverImage=@/path/to/new-cover.png"
-```
+REST endpoints:
 
-- `GET /locations?tripId=<tripId>&parentId=<optional>&page=1&limit=20` — list by trip
-- `GET /locations/:id` — get one
-- `DELETE /locations/:id` — delete (only if no children and no entries)
+- POST `/auth/register` — register a new user
+- POST `/auth/login` — returns `{ access_token }`
+- POST `/auth/logout` — invalidate current token (blacklisted in Redis); send `Authorization: Bearer <token>`
 
-## GraphQL
+JWT details:
 
-GraphQL is available at `/graphql` with the standard NestJS Apollo setup. CSP is relaxed for the playground in dev (see `RELAX_GRAPHQL_CSP`).
+- Secrets and expiry configured via `JWT_SECRET` and `JWT_EXPIRES_IN`
+- `JWT_EXPIRES_IN` accepts numeric seconds or strings like `1h`, `7d`
+
+## Core resources
+
+- Trips: CRUD with optional cover image; visibility (PRIVATE/FRIENDS/PUBLIC)
+- Locations: child hierarchy per trip; ownership validation
+- Entries: multiple images (`images[]` on create, `addImages[]` on update); reorder/remove; safe file cleanup
+- Likes/Comments: for trips
+
+Media:
+
+- Uploads are saved under `uploads/` and served at `/uploads/`
+- Images are optimized to WebP via Sharp (falls back gracefully if unavailable)
+
+## Real-time chat
+
+- Socket.IO gateway at the default namespace
+- Authenticate by providing the JWT via either:
+  - `handshake.auth.token = '<JWT>'`, or
+  - `Authorization: Bearer <JWT>` header
+- On connect, the gateway validates the token and marks the user online
 
 ## Testing
 
-```bash
+```zsh
 cd travel-backend
-yarn test          # unit tests
-yarn run test:e2e  # e2e tests
+yarn test:cov   # unit tests with coverage
+yarn test:e2e   # e2e tests
 ```
 
-## Notes & next steps
+E2E tests expect a reachable database. Ensure Postgres is running and env vars are set.
 
-- Frontend is WIP and not covered here yet.
-- If you prefer cloud storage (S3/GCS/Azure Blob) instead of local uploads, we can add adapters.
-- If you need stricter per-field limits, we can split configs or add field-aware filters.
+## Linting and formatting
+
+```zsh
+cd travel-backend
+yarn lint
+yarn format
+```
+
+## Troubleshooting
+
+- JWT error: `expiresIn should be a number of seconds or string representing a timespan`
+  - Ensure `JWT_EXPIRES_IN` is either a number (seconds) or a string like `1h`, `7d`.
+- Redis connection errors
+  - Verify `REDIS_URL` and that Redis is running locally: `redis-cli PING` => `PONG`.
+- Prisma database connection
+  - Either set `DATABASE_URL` or the `DB_*` component vars; confirm the DB exists (`yarn db:create`).
+- GraphQL Playground blocked by CSP
+  - In development CSP is disabled. If you set `NODE_ENV=production` locally and still want Playground, set `RELAX_GRAPHQL_CSP=true`.
+
+---
+
+Frontend (Next.js) in `travel-frontend/` is a work in progress and not covered here yet.
