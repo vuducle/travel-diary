@@ -4,12 +4,14 @@ import { useDispatch } from 'react-redux';
 import axios from 'axios';
 import { setToken } from '@/lib/redux/authSlice';
 import { useRouter } from 'next/navigation';
+import { useToast } from '@/hooks/use-toast';
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState<string>('');
+  const [password, setPassword] = useState<string>('');
   const dispatch = useDispatch();
   const router = useRouter();
+  const { showToast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,9 +24,14 @@ export default function LoginPage() {
         }
       );
       dispatch(setToken(response.data.accessToken));
+      showToast('Login successful!', 'success');
       router.push('/');
     } catch (error) {
       console.error('Login failed', error);
+      showToast(
+        'Login failed. Please check your credentials.',
+        'error'
+      );
     }
   };
 

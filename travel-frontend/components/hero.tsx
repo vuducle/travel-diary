@@ -1,6 +1,7 @@
 'use client';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
+import Link from 'next/link';
 
 export function Hero() {
   return (
@@ -47,10 +48,11 @@ export function Hero() {
 
           <div className="mx-auto mt-8 flex w-full flex-wrap items-center justify-center gap-4">
             <Button
+              asChild
               size="lg"
               className="rounded-full bg-primary text-white hover:bg-primary/90"
             >
-              Sign In
+              <Link href="/login">Sign In</Link>
             </Button>
             <Button
               size="lg"

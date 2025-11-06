@@ -6,6 +6,8 @@ import Footer from '@/components/footer';
 import { Provider } from 'react-redux';
 import { store, persistor } from '@/lib/redux/store';
 import { PersistGate } from 'redux-persist/integration/react';
+import ToastProvider from '@/components/ui/toast';
+import 'react-toastify/dist/ReactToastify.css';
 
 // Body copy
 const karla = Karla({
@@ -42,6 +44,7 @@ export default function RootLayout({
           <PersistGate loading={null} persistor={persistor}>
             <main>{children}</main>
             <Footer />
+            <ToastProvider />
           </PersistGate>
         </Provider>
       </body>
