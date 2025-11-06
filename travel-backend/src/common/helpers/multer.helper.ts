@@ -81,6 +81,13 @@ export const tripCoverUploadConfig = createMulterConfig({
   allowedMimeTypes: /\/(jpg|jpeg|png|webp)$/,
 });
 
+export const locationCoverImageUploadConfig = createMulterConfig({
+  destination: './uploads/locations',
+  fileNamePrefix: 'location',
+  maxSizeMB: 10,
+  allowedMimeTypes: /\/(jpg|jpeg|png|webp)$/,
+});
+
 // Combined profile uploads (avatar + coverImage) configuration for FileFieldsInterceptor
 export function profileUploadsMulterConfig() {
   return {

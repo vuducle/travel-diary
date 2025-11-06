@@ -30,7 +30,7 @@ export class LocationsService {
     return loc;
   }
 
-  async create(userId: string, dto: CreateLocationDto) {
+  async create(userId: string, dto: CreateLocationDto, coverUrl?: string) {
     await this.ensureTripOwnership(userId, dto.tripId);
     if (dto.parentId) {
       const parent = await this.prisma.location.findUnique({
@@ -50,6 +50,7 @@ export class LocationsService {
         lng: typeof dto.lng === 'number' ? dto.lng : undefined,
         tripId: dto.tripId,
         parentId: dto.parentId ?? null,
+        coverImage: coverUrl ?? undefined,
       },
     });
     return loc;
@@ -102,7 +103,12 @@ export class LocationsService {
     return loc;
   }
 
-  async update(userId: string, id: string, dto: UpdateLocationDto) {
+  async update(
+    userId: string,
+    id: string,
+    dto: UpdateLocationDto,
+    coverUrl?: string,
+  ) {
     const loc = await this.ensureLocationOwnership(userId, id);
 
     if (typeof dto.parentId !== 'undefined' && dto.parentId !== loc.id) {
@@ -127,6 +133,7 @@ export class LocationsService {
         country: dto.country,
         lat: typeof dto.lat === 'number' ? dto.lat : undefined,
         lng: typeof dto.lng === 'number' ? dto.lng : undefined,
+        coverImage: typeof coverUrl === 'string' ? coverUrl : undefined,
         parentId:
           typeof dto.parentId === 'undefined'
             ? undefined
@@ -152,5 +159,14 @@ export class LocationsService {
       );
     await this.prisma.location.delete({ where: { id } });
     return { message: 'Location deleted' };
+  }
+
+  async updateCoverImage(userId: string, id: string, coverUrl: string) {
+    await this.ensureLocationOwnership(userId, id);
+    const updated = await this.prisma.location.update({
+      where: { id },
+      data: { coverImage: coverUrl },
+    });
+    return updated;
   }
 }
