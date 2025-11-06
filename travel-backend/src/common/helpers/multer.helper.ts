@@ -67,9 +67,64 @@ export const entryImageUploadConfig = createMulterConfig({
   allowedMimeTypes: /\/(jpg|jpeg|png|gif|webp)$/,
 });
 
+export const profileCoverUploadConfig = createMulterConfig({
+  destination: './uploads/covers',
+  fileNamePrefix: 'cover',
+  maxSizeMB: 10,
+  allowedMimeTypes: /\/(jpg|jpeg|png|webp)$/,
+});
+
 export const tripCoverUploadConfig = createMulterConfig({
   destination: './uploads/trips',
   fileNamePrefix: 'trip',
   maxSizeMB: 10,
   allowedMimeTypes: /\/(jpg|jpeg|png|webp)$/,
 });
+
+// Combined profile uploads (avatar + coverImage) configuration for FileFieldsInterceptor
+export function profileUploadsMulterConfig() {
+  return {
+    storage: diskStorage({
+      destination: (
+        req: Request,
+        file: Express.Multer.File,
+        cb: (error: Error | null, destination: string) => void,
+      ) => {
+        const folder =
+          file.fieldname === 'coverImage'
+            ? './uploads/covers'
+            : './uploads/avatars';
+        cb(null, folder);
+      },
+      filename: (
+        req: Request,
+        file: Express.Multer.File,
+        cb: (error: Error | null, filename: string) => void,
+      ) => {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+        const ext = extname(file.originalname);
+        const prefix = file.fieldname === 'coverImage' ? 'cover' : 'avatar';
+        cb(null, `${prefix}-${uniqueSuffix}${ext}`);
+      },
+    }),
+    fileFilter: (
+      req: Request,
+      file: Express.Multer.File,
+      cb: (error: Error | null, acceptFile: boolean) => void,
+    ) => {
+      if (!file.mimetype.match(/\/(jpg|jpeg|png|webp)$/)) {
+        return cb(
+          new BadRequestException(
+            'Only image files are allowed! Accepted types: jpg, jpeg, png, webp',
+          ),
+          false,
+        );
+      }
+      cb(null, true);
+    },
+    limits: {
+      // Applies per file; both avatar and cover accepted up to 10MB
+      fileSize: 10 * 1024 * 1024,
+    },
+  };
+}

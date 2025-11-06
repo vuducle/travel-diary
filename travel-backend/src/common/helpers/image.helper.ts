@@ -113,6 +113,16 @@ export async function optimizeAvatar(inputAbsPath: string) {
   });
 }
 
+export async function optimizeCoverImage(inputAbsPath: string) {
+  return optimizeImageForWeb(inputAbsPath, {
+    quality: 80,
+    maxWidth: 1584,
+    maxHeight: 396,
+    format: 'webp',
+    suffix: '',
+  });
+}
+
 export async function optimizeEntryImage(inputAbsPath: string) {
   return optimizeImageForWeb(inputAbsPath, {
     quality: 80,

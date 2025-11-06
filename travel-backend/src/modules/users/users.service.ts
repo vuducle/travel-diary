@@ -13,6 +13,7 @@ interface User {
   location?: string | null;
   createdAt: Date;
   updatedAt: Date;
+  coverImage?: string | null;
 }
 
 @Injectable()
@@ -23,13 +24,20 @@ export class UsersService {
     userId: string,
     updateProfileDto: UpdateProfileDto,
     avatarUrl?: string,
+    coverImage?: string,
   ) {
-    const updateData: Partial<UpdateProfileDto> & { avatarUrl?: string } = {
+    const updateData: Partial<UpdateProfileDto> & {
+      avatarUrl?: string;
+      coverImage?: string;
+    } = {
       ...updateProfileDto,
     };
 
     if (avatarUrl) {
       updateData.avatarUrl = avatarUrl;
+    }
+    if (coverImage) {
+      updateData.coverImage = coverImage;
     }
 
     const user = await this.prisma.user.update({
@@ -43,6 +51,7 @@ export class UsersService {
         bio: true,
         location: true,
         avatarUrl: true,
+        coverImage: true,
         role: true,
         createdAt: true,
         updatedAt: true,
@@ -63,6 +72,7 @@ export class UsersService {
         bio: true,
         location: true,
         avatarUrl: true,
+        coverImage: true,
         role: true,
         createdAt: true,
         updatedAt: true,
@@ -88,6 +98,7 @@ export class UsersService {
         bio: true,
         location: true,
         avatarUrl: true,
+        coverImage: true,
         role: true,
         createdAt: true,
         updatedAt: true,

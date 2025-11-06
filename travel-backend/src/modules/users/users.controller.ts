@@ -6,7 +6,7 @@ import {
   Request,
   Body,
   UseInterceptors,
-  UploadedFile,
+  UploadedFiles,
   Query,
   BadRequestException,
 } from '@nestjs/common';
@@ -18,13 +18,16 @@ import {
   ApiBody,
   ApiQuery,
 } from '@nestjs/swagger';
-import { FileInterceptor } from '@nestjs/platform-express';
+import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { UsersService } from './users.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
-import { avatarUploadConfig } from '../../common/helpers/multer.helper';
+import { profileUploadsMulterConfig } from '../../common/helpers/multer.helper';
 import * as path from 'path';
-import { optimizeAvatar } from '../../common/helpers/image.helper';
+import {
+  optimizeAvatar,
+  optimizeCoverImage,
+} from '../../common/helpers/image.helper';
 import type { Request as ExpressRequest } from 'express';
 
 @ApiTags('Users')
@@ -57,25 +60,59 @@ export class UsersController {
           format: 'binary',
           description: 'Avatar image (jpg, jpeg, png, max 5MB)',
         },
+        coverImage: {
+          type: 'string',
+          format: 'binary',
+          description: 'Cover image (jpg, jpeg, png, max 5MB)',
+        },
       },
     },
   })
-  @UseInterceptors(FileInterceptor('avatar', avatarUploadConfig))
+  // Accept both 'avatar' and 'coverImage' files in one request
+  @UseInterceptors(
+    FileFieldsInterceptor(
+      [
+        { name: 'avatar', maxCount: 1 },
+        { name: 'coverImage', maxCount: 1 },
+      ],
+      profileUploadsMulterConfig(),
+    ),
+  )
   async updateProfile(
     @Request() req: ExpressRequest & { user: { id: string } },
     @Body() updateProfileDto: UpdateProfileDto,
-    @UploadedFile() file?: Express.Multer.File,
+    @UploadedFiles()
+    files?: {
+      avatar?: Express.Multer.File[];
+      coverImage?: Express.Multer.File[];
+    },
   ) {
     let avatarUrl: string | undefined = undefined;
-    if (file) {
-      const abs = file.path || path.resolve(file.destination, file.filename);
+    let coverUrl: string | undefined = undefined;
+
+    const avatarFile = files?.avatar?.[0];
+    if (avatarFile) {
+      const abs =
+        avatarFile.path ||
+        path.resolve(avatarFile.destination, avatarFile.filename);
       const { publicUrl } = await optimizeAvatar(abs);
       avatarUrl = publicUrl;
     }
+
+    const coverFile = files?.coverImage?.[0];
+    if (coverFile) {
+      const abs =
+        coverFile.path ||
+        path.resolve(coverFile.destination, coverFile.filename);
+      const { publicUrl } = await optimizeCoverImage(abs);
+      coverUrl = publicUrl;
+    }
+
     return this.usersService.updateProfile(
       req.user.id,
       updateProfileDto,
       avatarUrl,
+      coverUrl,
     );
   }
 
