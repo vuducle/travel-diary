@@ -7,6 +7,7 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { join } from 'path';
 import helmet from 'helmet';
+import cookieParser from 'cookie-parser';
 
 async function bootstrap() {
   // Build DATABASE_URL from component env vars (DB_USER, DB_PASSWORD, DB_HOST, DB_PORT, DB_NAME)
@@ -21,7 +22,10 @@ async function bootstrap() {
 
   const port = Number(process.env.PORT ?? 3000);
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
-    cors: true,
+    cors: {
+      origin: ['http://localhost:3000', 'http://localhost:3598'],
+      credentials: true,
+    },
   });
 
   // Serve static files (uploaded avatars)
@@ -37,6 +41,9 @@ async function bootstrap() {
       transform: true,
     }),
   );
+
+  // Parse cookies (for HttpOnly refresh token cookie)
+  app.use(cookieParser());
 
   // Setup Swagger (OpenAPI) at /api
   const config = new DocumentBuilder()
@@ -101,7 +108,7 @@ async function bootstrap() {
       }),
     );
   }
-  app.enableCors();
+  // CORS already configured during app bootstrap
   await app.listen(port);
 
   // Use Nest's logger so logs integrate with Nest's logging system

@@ -38,6 +38,7 @@ model User {
   tripComments           TripComment[]
   notifications          Notification[]
   auditLogs              AuditLog[]     @relation("AuditActor")
+  refreshTokens          RefreshToken[]
   createdAt              DateTime       @default(now())
   updatedAt              DateTime       @updatedAt
 }
@@ -114,6 +115,28 @@ model TokenBlacklist {
 
   @@index([token])
   @@index([expiresAt])
+}
+
+// Long-lived refresh tokens for session continuation.
+// We store only a hash of the token for security (raw value sent via HttpOnly cookie).
+// Rotation: when a refresh occurs we create a new record and set revokedAt on the old one,
+// optionally linking replacedById for audit/replay protection.
+model RefreshToken {
+  id           String        @id @default(uuid())
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId       String
+  tokenHash    String // sha256 hash of opaque random token, not reversible
+  expiresAt    DateTime
+  revokedAt    DateTime?
+  replacedById String?       @unique
+  replacedBy   RefreshToken? @relation("ReplacementChain", fields: [replacedById], references: [id])
+  previous     RefreshToken? @relation("ReplacementChain")
+  createdAt    DateTime      @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@index([revokedAt])
+  @@index([tokenHash])
 }
 
 model Friendship {

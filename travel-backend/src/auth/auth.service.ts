@@ -10,6 +10,12 @@ import { RegisterDto } from './dto/register.dto';
 import { JwtService } from '@nestjs/jwt';
 import { LoginDto } from './dto/login.dto';
 import { RedisService } from '../modules/redis/redis.service';
+import { randomBytes, createHash } from 'crypto';
+
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
 
 interface UserResponse {
   id: string;
@@ -128,10 +134,13 @@ export class AuthService {
 
   /**
    * Login user and return JWT access token along with the user info.
+   * Also generates a refresh token for session continuation.
    */
-  async login(
-    loginDto: LoginDto,
-  ): Promise<{ accessToken: string; user: UserResponse }> {
+  async login(loginDto: LoginDto): Promise<{
+    accessToken: string;
+    refreshToken: string;
+    user: UserResponse;
+  }> {
     const { email, password } = loginDto;
     const user = await this.validateUser(email, password);
     if (!user) throw new UnauthorizedException('Invalid credentials');
@@ -147,7 +156,147 @@ export class AuthService {
     };
     const accessToken = this.jwtService.sign(payload);
 
-    return { accessToken, user };
+    // Generate a long-lived refresh token (opaque random token)
+    const refreshToken = await this.generateRefreshToken(user.id);
+
+    return { accessToken, refreshToken, user };
+  }
+
+  /**
+   * Generate a new refresh token for a user.
+   * Returns opaque token (raw value) to be sent as HttpOnly cookie.
+   * Stores only SHA256 hash in database for security.
+   */
+  private async generateRefreshToken(userId: string): Promise<string> {
+    // Generate 64-byte random token
+    const rawToken = randomBytes(64).toString('hex');
+
+    // Hash it with SHA256 before storing (faster than bcrypt for lookup)
+    const tokenHash = createHash('sha256').update(rawToken).digest('hex');
+
+    // Set expiry to 14 days from now
+    const expiresAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
+
+    await this.prisma.refreshToken.create({
+      data: {
+        userId,
+        tokenHash,
+        expiresAt,
+      },
+    });
+
+    return rawToken;
+  }
+
+  /**
+   * Refresh access token using refresh token.
+   * Implements rotation: invalidates old refresh token and issues new one.
+   */
+  async refresh(refreshToken: string): Promise<{
+    accessToken: string;
+    refreshToken: string;
+  }> {
+    // Hash the incoming token
+    const tokenHash = createHash('sha256').update(refreshToken).digest('hex');
+
+    // Find the token record with user
+    const tokenRecord = await this.prisma.refreshToken.findFirst({
+      where: { tokenHash },
+      include: { user: true },
+    });
+
+    if (!tokenRecord) {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+
+    // Check if token is expired
+    if (tokenRecord.expiresAt < new Date()) {
+      throw new UnauthorizedException('Refresh token expired');
+    }
+
+    // Check if token has been revoked
+    if (tokenRecord.revokedAt) {
+      throw new UnauthorizedException('Refresh token has been revoked');
+    }
+
+    // Revoke the current token (rotation)
+    await this.prisma.refreshToken.update({
+      where: { id: tokenRecord.id },
+      data: { revokedAt: new Date() },
+    });
+
+    // Generate new access token
+    const payload = {
+      sub: tokenRecord.user.id,
+      email: tokenRecord.user.email,
+      role: tokenRecord.user.role,
+      name: tokenRecord.user.name,
+      avatarUrl: tokenRecord.user.avatarUrl,
+      bio: tokenRecord.user.bio,
+      location: tokenRecord.user.location,
+    };
+    const accessToken = this.jwtService.sign(payload);
+
+    // Generate new refresh token
+    const newRefreshToken = await this.generateRefreshToken(
+      tokenRecord.user.id,
+    );
+
+    // Optionally link the replacement for audit trail
+    const newTokenHash = createHash('sha256')
+      .update(newRefreshToken)
+      .digest('hex');
+    
+    const newTokenRecord = await this.prisma.refreshToken.findFirst({
+      where: {
+        userId: tokenRecord.user.id,
+        tokenHash: newTokenHash,
+      },
+    });
+
+    if (newTokenRecord) {
+      await this.prisma.refreshToken.update({
+        where: { id: tokenRecord.id },
+        data: {
+          replacedById: newTokenRecord.id,
+        },
+      });
+    }
+
+    return { accessToken, refreshToken: newRefreshToken };
+  }
+
+  /**
+   * Revoke a specific refresh token (for logout).
+   */
+  async revokeRefreshToken(refreshToken: string): Promise<void> {
+    const tokenHash = createHash('sha256').update(refreshToken).digest('hex');
+
+    const tokenRecord = await this.prisma.refreshToken.findFirst({
+      where: { tokenHash },
+    });
+
+    if (tokenRecord && !tokenRecord.revokedAt) {
+      await this.prisma.refreshToken.update({
+        where: { id: tokenRecord.id },
+        data: { revokedAt: new Date() },
+      });
+    }
+  }
+
+  /**
+   * Revoke all refresh tokens for a user (logout from all devices).
+   */
+  async revokeAllRefreshTokens(userId: string): Promise<void> {
+    await this.prisma.refreshToken.updateMany({
+      where: {
+        userId,
+        revokedAt: null,
+      },
+      data: {
+        revokedAt: new Date(),
+      },
+    });
   }
 
   /**
