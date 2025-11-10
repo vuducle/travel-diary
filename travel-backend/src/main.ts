@@ -8,6 +8,7 @@ import { NestExpressApplication } from '@nestjs/platform-express';
 import { join } from 'path';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
+import { Response } from 'express';
 
 async function bootstrap() {
   // Build DATABASE_URL from component env vars (DB_USER, DB_PASSWORD, DB_HOST, DB_PORT, DB_NAME)
@@ -28,9 +29,17 @@ async function bootstrap() {
     },
   });
 
-  // Serve static files (uploaded avatars)
-  app.useStaticAssets(join(__dirname, '..', 'uploads'), {
+  // Serve static files (uploaded avatars) with CORS headers
+  // Use process.cwd() to get the project root directory where uploads folder is located
+  const uploadsPath = join(process.cwd(), 'uploads');
+  console.log(`[Static Files] Serving uploads from: ${uploadsPath}`);
+
+  app.useStaticAssets(uploadsPath, {
     prefix: '/uploads/',
+    setHeaders: (res: Response) => {
+      res.set('Access-Control-Allow-Origin', '*');
+      res.set('Cross-Origin-Resource-Policy', 'cross-origin');
+    },
   });
 
   // Enable global validation pipes
