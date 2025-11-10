@@ -76,9 +76,9 @@ export default function DashboardNav() {
 
   const navLinkClasses = (path: string) =>
     cn(
-      'p-2.5 rounded-full bg-[#5B7971] hover:bg-[#4a635b] transition-colors shadow-md relative',
+      'p-2.5 rounded-full bg-[#5B7971] hover:bg-[#4a635b] active:bg-primary transition-colors shadow-md relative',
       {
-        'bg-[#E6B54E] hover:bg-[#d4a444]': pathname === path,
+        'bg-primary hover:bg-primary': pathname === path,
       }
     );
 
@@ -153,9 +153,9 @@ export default function DashboardNav() {
             </button>
 
             {/* Profile Button */}
-            <Link href="/profile">
+            <Link href="/dashboard/profile">
               <button
-                className={navLinkClasses('/profile')}
+                className={navLinkClasses('/dashboard/profile')}
                 aria-label="Profile"
               >
                 <UserIcon className="h-5 w-5 text-white" />
@@ -184,7 +184,9 @@ export default function DashboardNav() {
                       </div>
                     )}
                   </div>
-                  <span className="hidden sm:block">{displayName}</span>
+                  <span className="hidden sm:block">
+                    {displayName}
+                  </span>
                 </button>
               </div>
               {isDropdownOpen && (
