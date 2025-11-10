@@ -246,7 +246,7 @@ export class AuthService {
     const newTokenHash = createHash('sha256')
       .update(newRefreshToken)
       .digest('hex');
-    
+
     const newTokenRecord = await this.prisma.refreshToken.findFirst({
       where: {
         userId: tokenRecord.user.id,
