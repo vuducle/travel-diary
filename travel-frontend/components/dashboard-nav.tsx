@@ -83,135 +83,251 @@ export default function DashboardNav() {
     );
 
   return (
-    <nav className="sticky top-0 z-50 py-2">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 bg-white/30 backdrop-blur-lg rounded-b-2xl border border-t-0 border-white/50 shadow-lg">
-        <div className="flex items-center justify-between h-16">
-          {/* Logo */}
-          <div className="shrink-0">
-            <Link
-              href="/dashboard"
-              className="text-xl font-semibold text-gray-800"
-            >
-              TravelDiary
-            </Link>
-          </div>
-
-          {/* Search Bar */}
-          <div className="flex-1 max-w-md md:mx-8 hidden md:block">
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Search className="h-5 w-5 text-gray-500" />
-              </div>
-              <input
-                type="text"
-                placeholder="Search"
-                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg bg-white/90 backdrop-blur-sm text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#E6B54E] focus:border-transparent"
-                disabled
-              />
-            </div>
-          </div>
-
-          {/* Navigation Icons */}
-          <div className="flex items-center space-x-3">
-            {/* Home Button */}
-            <Link href="/dashboard">
-              <button
-                className={navLinkClasses('/dashboard')}
-                aria-label="Home"
-              >
-                <Home className="h-5 w-5 text-white" />
-              </button>
-            </Link>
-
-            {/* Create Button */}
+    <>
+      {/* Mobile Header - Top */}
+      <div className="sticky top-0 z-40 md:hidden bg-white/95 backdrop-blur-lg border-b border-gray-200 shadow-sm">
+        <div className="flex items-center justify-between h-14 px-4">
+          <Link
+            href="/dashboard"
+            className="text-lg font-semibold text-gray-800"
+          >
+            TravelDiary
+          </Link>
+          <div className="relative" ref={dropdownRef}>
             <button
-              className="p-2.5 rounded-full bg-[#5B7971] hover:bg-[#4a635b] transition-colors shadow-md relative"
-              aria-label="Create"
-              disabled
+              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+              className="flex items-center"
             >
-              <Plus className="h-5 w-5 text-white" />
-            </button>
-
-            {/* Messages Button */}
-            <button
-              className="p-2.5 rounded-full bg-[#5B7971] hover:bg-[#4a635b] transition-colors shadow-md relative"
-              aria-label="Messages"
-              disabled
-            >
-              <MessageCircle className="h-5 w-5 text-white" />
-              <span className="absolute top-0 right-0 block h-2.5 w-2.5 rounded-full bg-white border-2 border-[#5B7971]" />
-            </button>
-
-            {/* Notifications Button */}
-            <button
-              className="p-2.5 rounded-full bg-[#5B7971] hover:bg-[#4a635b] transition-colors shadow-md relative"
-              aria-label="Notifications"
-              disabled
-            >
-              <Bell className="h-5 w-5 text-white" />
-              <span className="absolute top-0 right-0 block h-2.5 w-2.5 rounded-full bg-white border-2 border-[#5B7971]" />
-            </button>
-
-            {/* Profile Button */}
-            <Link href="/dashboard/profile">
-              <button
-                className={navLinkClasses('/dashboard/profile')}
-                aria-label="Profile"
-              >
-                <UserIcon className="h-5 w-5 text-white" />
-              </button>
-            </Link>
-
-            {/* User Profile Dropdown */}
-            <div className="relative ml-3" ref={dropdownRef}>
-              <div>
-                <button
-                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                  className="flex items-center space-x-2 text-sm font-medium text-gray-800 focus:outline-none"
-                >
-                  <div className="relative">
-                    {avatarUrl ? (
-                      <Image
-                        src={avatarUrl}
-                        alt={displayName}
-                        width={40}
-                        height={40}
-                        className="rounded-full border-2 h-10 w-10 border-white shadow-sm object-cover"
-                      />
-                    ) : (
-                      <div className="w-10 h-10 rounded-full bg-gray-600 border-2 border-white shadow-sm flex items-center justify-center text-white font-semibold text-sm">
-                        {getInitials()}
-                      </div>
-                    )}
-                  </div>
-                  <span className="hidden sm:block">
-                    {displayName}
-                  </span>
-                </button>
-              </div>
-              {isDropdownOpen && (
-                <div className="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white ring-1 ring-black ring-opacity-5 z-10">
-                  <Link
-                    href="/profile"
-                    className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                    onClick={() => setIsDropdownOpen(false)}
-                  >
-                    <UserIcon className="mr-3 h-4 w-4" />
-                    <span>Profile</span>
-                  </Link>
-                  <button
-                    onClick={handleLogout}
-                    className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                  >
-                    <LogOut className="mr-3 h-4 w-4" />
-                    <span>Logout</span>
-                  </button>
+              {avatarUrl ? (
+                <Image
+                  src={avatarUrl}
+                  alt={displayName}
+                  width={32}
+                  height={32}
+                  className="rounded-full border-2 h-8 w-8 border-gray-200 object-cover"
+                />
+              ) : (
+                <div className="w-8 h-8 rounded-full bg-gray-600 border-2 border-gray-200 flex items-center justify-center text-white font-semibold text-xs">
+                  {getInitials()}
                 </div>
               )}
-            </div>
+            </button>
+            {isDropdownOpen && (
+              <div className="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white ring-1 ring-black ring-opacity-5 z-10">
+                <Link
+                  href="/dashboard/profile"
+                  className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  onClick={() => setIsDropdownOpen(false)}
+                >
+                  <UserIcon className="mr-3 h-4 w-4" />
+                  <span>Profile</span>
+                </Link>
+                <button
+                  onClick={handleLogout}
+                  className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                >
+                  <LogOut className="mr-3 h-4 w-4" />
+                  <span>Logout</span>
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>
-    </nav>
+
+      {/* Desktop Navigation - Top */}
+      <nav className="sticky top-0 z-50 py-2 hidden md:block">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 bg-white/30 backdrop-blur-lg rounded-b-2xl border border-t-0 border-white/50 shadow-lg">
+          <div className="flex items-center justify-between h-16">
+            {/* Logo */}
+            <div className="shrink-0">
+              <Link
+                href="/dashboard"
+                className="text-xl font-semibold text-gray-800"
+              >
+                TravelDiary
+              </Link>
+            </div>
+
+            {/* Search Bar */}
+            <div className="flex-1 max-w-md md:mx-8 hidden md:block">
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Search className="h-5 w-5 text-gray-500" />
+                </div>
+                <input
+                  type="text"
+                  placeholder="Search"
+                  className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg bg-white/90 backdrop-blur-sm text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#E6B54E] focus:border-transparent"
+                  disabled
+                />
+              </div>
+            </div>
+
+            {/* Navigation Icons */}
+            <div className="flex items-center space-x-3">
+              {/* Home Button */}
+              <Link href="/dashboard">
+                <button
+                  className={navLinkClasses('/dashboard')}
+                  aria-label="Home"
+                >
+                  <Home className="h-5 w-5 text-white" />
+                </button>
+              </Link>
+
+              {/* Create Button */}
+              <button
+                className="p-2.5 rounded-full bg-[#5B7971] hover:bg-[#4a635b] transition-colors shadow-md relative"
+                aria-label="Create"
+                disabled
+              >
+                <Plus className="h-5 w-5 text-white" />
+              </button>
+
+              {/* Messages Button */}
+              <button
+                className="p-2.5 rounded-full bg-[#5B7971] hover:bg-[#4a635b] transition-colors shadow-md relative"
+                aria-label="Messages"
+                disabled
+              >
+                <MessageCircle className="h-5 w-5 text-white" />
+                <span className="absolute top-0 right-0 block h-2.5 w-2.5 rounded-full bg-white border-2 border-[#5B7971]" />
+              </button>
+
+              {/* Notifications Button */}
+              <button
+                className="p-2.5 rounded-full bg-[#5B7971] hover:bg-[#4a635b] transition-colors shadow-md relative"
+                aria-label="Notifications"
+                disabled
+              >
+                <Bell className="h-5 w-5 text-white" />
+                <span className="absolute top-0 right-0 block h-2.5 w-2.5 rounded-full bg-white border-2 border-[#5B7971]" />
+              </button>
+
+              {/* Profile Button */}
+              <Link href="/dashboard/profile">
+                <button
+                  className={navLinkClasses('/dashboard/profile')}
+                  aria-label="Profile"
+                >
+                  <UserIcon className="h-5 w-5 text-white" />
+                </button>
+              </Link>
+
+              {/* User Profile Dropdown */}
+              <div className="relative ml-3" ref={dropdownRef}>
+                <div>
+                  <button
+                    onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                    className="flex items-center space-x-2 text-sm font-medium text-gray-800 focus:outline-none"
+                  >
+                    <div className="relative">
+                      {avatarUrl ? (
+                        <Image
+                          src={avatarUrl}
+                          alt={displayName}
+                          width={40}
+                          height={40}
+                          className="rounded-full border-2 h-10 w-10 border-white shadow-sm object-cover"
+                        />
+                      ) : (
+                        <div className="w-10 h-10 rounded-full bg-gray-600 border-2 border-white shadow-sm flex items-center justify-center text-white font-semibold text-sm">
+                          {getInitials()}
+                        </div>
+                      )}
+                    </div>
+                    <span className="hidden sm:block">
+                      {displayName}
+                    </span>
+                  </button>
+                </div>
+                {isDropdownOpen && (
+                  <div className="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white ring-1 ring-black ring-opacity-5 z-10">
+                    <Link
+                      href="/profile"
+                      className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      onClick={() => setIsDropdownOpen(false)}
+                    >
+                      <UserIcon className="mr-3 h-4 w-4" />
+                      <span>Profile</span>
+                    </Link>
+                    <button
+                      onClick={handleLogout}
+                      className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    >
+                      <LogOut className="mr-3 h-4 w-4" />
+                      <span>Logout</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </nav>
+
+      {/* Mobile Navigation - Bottom */}
+      <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-white/95 backdrop-blur-lg border-t border-gray-200 shadow-lg">
+        <div className="flex items-center justify-around h-16 px-2">
+          {/* Home */}
+          <Link
+            href="/dashboard"
+            className={cn(
+              'flex flex-col items-center justify-center flex-1 py-2 transition-colors',
+              pathname === '/dashboard'
+                ? 'text-primary'
+                : 'text-gray-600'
+            )}
+          >
+            <Home className="h-6 w-6" />
+            <span className="text-xs mt-1">Home</span>
+          </Link>
+
+          {/* Create */}
+          <button
+            className="flex flex-col items-center justify-center flex-1 py-2 text-gray-600"
+            disabled
+          >
+            <Plus className="h-6 w-6" />
+            <span className="text-xs mt-1">Create</span>
+          </button>
+
+          {/* Messages */}
+          <button
+            className="flex flex-col items-center justify-center flex-1 py-2 text-gray-600 relative"
+            disabled
+          >
+            <MessageCircle className="h-6 w-6" />
+            <span className="text-xs mt-1">Messages</span>
+            <span className="absolute top-1 right-1/4 block h-2 w-2 rounded-full bg-primary" />
+          </button>
+
+          {/* Notifications */}
+          <button
+            className="flex flex-col items-center justify-center flex-1 py-2 text-gray-600 relative"
+            disabled
+          >
+            <Bell className="h-6 w-6" />
+            <span className="text-xs mt-1">Alerts</span>
+            <span className="absolute top-1 right-1/4 block h-2 w-2 rounded-full bg-primary" />
+          </button>
+
+          {/* Profile */}
+          <Link
+            href="/dashboard/profile"
+            className={cn(
+              'flex flex-col items-center justify-center flex-1 py-2 transition-colors',
+              pathname === '/dashboard/profile'
+                ? 'text-primary'
+                : 'text-gray-600'
+            )}
+          >
+            <UserIcon className="h-6 w-6" />
+            <span className="text-xs mt-1">Profile</span>
+          </Link>
+        </div>
+      </nav>
+    </>
   );
 }

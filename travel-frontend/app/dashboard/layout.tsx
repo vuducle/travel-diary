@@ -25,16 +25,16 @@ export default function DashboardLayout({
     { id: 1, name: 'Vũ Minh Lê', avatar: null },
     { id: 2, name: 'Niklas Graß', avatar: null },
     { id: 3, name: 'Vũ Đức Lê', avatar: null },
-    { id: 4, name: '박재영', avatar: null },
+    { id: 4, name: '박채영', avatar: null },
   ];
 
   return (
     <AuthGuard>
       <DashboardNav />
-      <div className="p-6">
+      <div className="p-6 pb-20 md:pb-6">
         <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-6">
           {/* Left Sidebar */}
-          <aside className="space-y-6 sticky top-6 h-screen overflow-y-auto">
+          <aside className="space-y-6 sticky top-6 h-screen overflow-y-auto hidden lg:block">
             {/* Profile Card */}
             <div className="bg-white/90 backdrop-blur-sm rounded-3xl p-6 shadow-xl">
               <div className="relative h-32 -mx-6 -mt-6 mb-4 rounded-t-3xl overflow-hidden bg-linear-to-r from-orange-400 to-pink-400">
