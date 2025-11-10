@@ -1,5 +1,4 @@
 'use client';
-import type { Metadata } from 'next';
 import { Karla, Merriweather, Geist_Mono } from 'next/font/google';
 import './globals.css';
 import Footer from '@/components/footer';

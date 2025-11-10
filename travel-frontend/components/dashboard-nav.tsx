@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '@/lib/redux/store';
 import { clearToken } from '@/lib/redux/authSlice';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import {
   Home,
   Plus,
@@ -17,11 +17,13 @@ import {
 import Image from 'next/image';
 import Link from 'next/link';
 import { getAvatarUrl } from '@/lib/utils/image-utils';
+import { cn } from '@/lib/utils';
 
 export default function DashboardNav() {
   const user = useSelector((state: RootState) => state.auth.user);
   const dispatch = useDispatch();
   const router = useRouter();
+  const pathname = usePathname();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -72,6 +74,14 @@ export default function DashboardNav() {
     };
   }, [dropdownRef]);
 
+  const navLinkClasses = (path: string) =>
+    cn(
+      'p-2.5 rounded-full bg-[#5B7971] hover:bg-[#4a635b] transition-colors shadow-md relative',
+      {
+        'bg-[#E6B54E] hover:bg-[#d4a444]': pathname === path,
+      }
+    );
+
   return (
     <nav className="sticky top-0 z-50 py-2">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 bg-white/30 backdrop-blur-lg rounded-b-2xl border border-t-0 border-white/50 shadow-lg">
@@ -104,12 +114,14 @@ export default function DashboardNav() {
           {/* Navigation Icons */}
           <div className="flex items-center space-x-3">
             {/* Home Button */}
-            <button
-              className="p-2.5 rounded-full bg-[#E6B54E] hover:bg-[#d4a444] transition-colors shadow-md"
-              aria-label="Home"
-            >
-              <Home className="h-5 w-5 text-white" />
-            </button>
+            <Link href="/dashboard">
+              <button
+                className={navLinkClasses('/dashboard')}
+                aria-label="Home"
+              >
+                <Home className="h-5 w-5 text-white" />
+              </button>
+            </Link>
 
             {/* Create Button */}
             <button
@@ -139,6 +151,16 @@ export default function DashboardNav() {
               <Bell className="h-5 w-5 text-white" />
               <span className="absolute top-0 right-0 block h-2.5 w-2.5 rounded-full bg-white border-2 border-[#5B7971]" />
             </button>
+
+            {/* Profile Button */}
+            <Link href="/profile">
+              <button
+                className={navLinkClasses('/profile')}
+                aria-label="Profile"
+              >
+                <UserIcon className="h-5 w-5 text-white" />
+              </button>
+            </Link>
 
             {/* User Profile Dropdown */}
             <div className="relative ml-3" ref={dropdownRef}>

@@ -1,5 +1,5 @@
-import PublicGuard from '@/components/public-guard';
 'use client';
+import PublicGuard from '@/components/public-guard';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
@@ -105,7 +105,9 @@ export default function RegisterPage() {
                     id="username"
                     placeholder="armindorri"
                     value={form.username}
-                    onChange={(e) => update('username', e.target.value)}
+                    onChange={(e) =>
+                      update('username', e.target.value)
+                    }
                     required
                     autoComplete="username"
                   />
@@ -116,7 +118,9 @@ export default function RegisterPage() {
                     id="password"
                     placeholder="armindorri123"
                     value={form.password}
-                    onChange={(e) => update('password', e.target.value)}
+                    onChange={(e) =>
+                      update('password', e.target.value)
+                    }
                     required
                     autoComplete="new-password"
                     type={showPassword ? 'text' : 'password'}
@@ -178,7 +182,9 @@ export default function RegisterPage() {
                     id="location"
                     placeholder="Teheran, Iran"
                     value={form.location}
-                    onChange={(e) => update('location', e.target.value)}
+                    onChange={(e) =>
+                      update('location', e.target.value)
+                    }
                     autoComplete="off"
                   />
                 </div>
