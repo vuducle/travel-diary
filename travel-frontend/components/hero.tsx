@@ -59,7 +59,9 @@ export function Hero() {
               variant="secondary"
               className="rounded-full bg-secondary text-white hover:bg-secondary/80"
             >
-              Sign Up
+              <Link className="text-white" href="/register">
+                Sign Up
+              </Link>
             </Button>
           </div>
         </div>

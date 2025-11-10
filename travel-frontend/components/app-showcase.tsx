@@ -1,5 +1,6 @@
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
+import Link from 'next/dist/client/link';
 
 export default function AppShowcase() {
   return (
@@ -18,13 +19,17 @@ export default function AppShowcase() {
 
           <div className="mt-8 flex flex-wrap gap-4">
             <Button className="rounded-full bg-primary text-white hover:bg-primary/90 cursor-pointer">
-              Sign up
+              <Link className="text-white" href="/register">
+                Sign up
+              </Link>
             </Button>
             <Button
               variant="outline"
               className="rounded-full bg-secondary text-white hover:bg-secondary/90 cursor-pointer"
             >
-              Learn more
+              <Link className="text-white" href="/about">
+                Learn more
+              </Link>
             </Button>
           </div>
         </div>
