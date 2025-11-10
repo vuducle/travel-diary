@@ -5,19 +5,35 @@ import axios from 'axios';
 import { setToken } from '@/lib/redux/authSlice';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
+import Image from 'next/image';
+import Link from 'next/link';
+import { Eye, EyeOff } from 'lucide-react';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
 
 export default function LoginPage() {
   const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
+  const [showPassword, setShowPassword] = useState<boolean>(false);
   const dispatch = useDispatch();
   const router = useRouter();
   const { showToast } = useToast();
+
+  const PUBLIC_API_URL =
+    process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3598';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       const response = await axios.post(
-        'http://localhost:3598/auth/login',
+        `${PUBLIC_API_URL}/auth/login`,
         {
           email,
           password,
@@ -36,53 +52,93 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex justify-center items-center h-screen">
-      <form
-        className="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4"
-        onSubmit={handleSubmit}
-      >
-        <div className="mb-4">
-          <label
-            className="block text-gray-700 text-sm font-bold mb-2"
-            htmlFor="email"
-          >
-            Email
-          </label>
-          <input
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-            id="email"
-            type="email"
-            placeholder="Email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-        </div>
-        <div className="mb-6">
-          <label
-            className="block text-gray-700 text-sm font-bold mb-2"
-            htmlFor="password"
-          >
-            Password
-          </label>
-
-          <input
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 mb-3 leading-tight focus:outline-none focus:shadow-outline"
-            id="password"
-            type="password"
-            placeholder="******************"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-        </div>
-        <div className="flex items-center justify-between">
-          <button
-            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-            type="submit"
-          >
-            Sign In
-          </button>
-        </div>
-      </form>
+    <div className="grid min-h-screen grid-cols-1 md:grid-cols-2">
+      {/* Left side form */}
+      <div className="flex items-center justify-center bg-[#f7f2ea] p-6">
+        <Card className="w-full max-w-sm bg-white/90 backdrop-blur-sm">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-center text-2xl font-semibold">
+              Sign In
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-2">
+            <form onSubmit={handleSubmit} className="space-y-5">
+              <div className="space-y-2">
+                <Label htmlFor="email">E-Mail</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="armindorri@kasselgermany.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  autoComplete="email"
+                  required
+                />
+              </div>
+              <div className="space-y-2 relative">
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  id="password"
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  autoComplete="current-password"
+                  required
+                  type={showPassword ? 'text' : 'password'}
+                />
+                <Button
+                  className="absolute top-0 right-0 h-full px-3 hover:bg-transparent"
+                  onClick={() => setShowPassword(!showPassword)}
+                  size="icon"
+                  type="button"
+                  variant="ghost"
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4 text-muted-foreground" />
+                  ) : (
+                    <Eye className="h-4 w-4 text-muted-foreground" />
+                  )}
+                </Button>
+                <div className="text-right">
+                  <Link
+                    aria-disabled={!email}
+                    href="/forgot-password"
+                    className="text-xs text-muted-foreground hover:text-primary underline underline-offset-2"
+                  >
+                    Forgot password?
+                  </Link>
+                </div>
+              </div>
+              <div className="flex gap-3">
+                <Button
+                  type="submit"
+                  className="flex-1 bg-primary text-white hover:bg-primary/90 cursor-pointer"
+                >
+                  Confirm
+                </Button>
+                <Button
+                  type="button"
+                  className="flex-1 bg-secondary text-white hover:bg-secondary/80 cursor-pointer"
+                  onClick={() => router.push('/register')}
+                >
+                  Create an account?
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
+      {/* Right side image */}
+      <div className="relative hidden md:block">
+        <Image
+          src="/form/bg-chinatown.jpg"
+          alt="City night street"
+          fill
+          priority
+          className="object-cover"
+        />
+        <div className="absolute inset-0 bg-black/20" />
+      </div>
     </div>
   );
 }
