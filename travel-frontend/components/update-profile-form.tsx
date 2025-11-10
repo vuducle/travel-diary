@@ -18,14 +18,16 @@ import { RootState } from '@/lib/redux/store';
 import { setUser } from '@/lib/redux/authSlice';
 
 export default function UpdateProfileForm() {
-  const [name, setName] = useState('');
-  const [bio, setBio] = useState('');
-  const [location, setLocation] = useState('');
+  const [name, setName] = useState<string>('');
+  const [bio, setBio] = useState<string>('');
+  const [location, setLocation] = useState<string>('');
   const [avatar, setAvatar] = useState<File | null>(null);
   const [coverImage, setCoverImage] = useState<File | null>(null);
   const { showToast } = useToast();
   const dispatch = useDispatch();
-  const { token, user } = useSelector((state: RootState) => state.auth);
+  const { token, user } = useSelector(
+    (state: RootState) => state.auth
+  );
 
   const PUBLIC_API_URL =
     process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3598';
@@ -33,11 +35,14 @@ export default function UpdateProfileForm() {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const response = await axios.get(`${PUBLIC_API_URL}/users/profile`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+        const response = await axios.get(
+          `${PUBLIC_API_URL}/users/profile`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
         dispatch(setUser(response.data));
       } catch (error) {
         console.error('Failed to fetch profile', error);
@@ -103,24 +108,23 @@ export default function UpdateProfileForm() {
     }
 
     try {
-      await axios.patch(
-        `${PUBLIC_API_URL}/users/profile`,
-        formData,
-        {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      await axios.patch(`${PUBLIC_API_URL}/users/profile`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          Authorization: `Bearer ${token}`,
+        },
+      });
       showToast('Profile updated successfully!', 'success');
       const fetchProfile = async () => {
         try {
-          const response = await axios.get(`${PUBLIC_API_URL}/users/profile`, {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          });
+          const response = await axios.get(
+            `${PUBLIC_API_URL}/users/profile`,
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          );
           dispatch(setUser(response.data));
         } catch (error) {
           console.error('Failed to fetch profile', error);
