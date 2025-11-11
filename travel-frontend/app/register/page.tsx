@@ -2,7 +2,7 @@
 import PublicGuard from '@/components/public-guard';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import axios from 'axios';
+import api from '@/lib/api/client';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Eye, EyeOff } from 'lucide-react';
@@ -32,8 +32,7 @@ export default function RegisterPage() {
   const router = useRouter();
   const { showToast } = useToast();
 
-  const PUBLIC_API_URL =
-    process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3598';
+  // Base URL handled by centralized api client
 
   const update = (key: string, value: string) =>
     setForm((f) => ({ ...f, [key]: value }));
@@ -56,7 +55,9 @@ export default function RegisterPage() {
         bio,
         location,
       };
-      await axios.post(`${PUBLIC_API_URL}/auth/register`, payload);
+      await api.post('/auth/register', payload, {
+        withCredentials: true,
+      });
       showToast('Registration successful! Please login.', 'success');
       router.push('/login');
     } catch (err) {

@@ -1,68 +1,37 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import axios from 'axios';
+import api from '@/lib/api/client';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '@/lib/redux/store';
 import { setUser } from '@/lib/redux/authSlice';
+import Image from 'next/image';
+import { getAvatarUrl, getAssetUrl } from '@/lib/utils/image-utils';
 
 export default function UpdateProfileForm() {
-  const [name, setName] = useState<string>('');
-  const [bio, setBio] = useState<string>('');
-  const [location, setLocation] = useState<string>('');
-  const [avatar, setAvatar] = useState<File | null>(null);
-  const [coverImage, setCoverImage] = useState<File | null>(null);
   const { showToast } = useToast();
   const dispatch = useDispatch();
-  const { token, user } = useSelector(
-    (state: RootState) => state.auth
+  const { user } = useSelector((state: RootState) => state.auth);
+  const [name, setName] = useState<string>(user?.name || '');
+  const [bio, setBio] = useState<string>(user?.bio || '');
+  const [location, setLocation] = useState<string>(
+    user?.location || ''
   );
+  const [avatar, setAvatar] = useState<File | null>(null);
+  const [coverImage, setCoverImage] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(
+    getAvatarUrl(user?.avatarUrl)
+  );
+  const [coverImagePreview, setCoverImagePreview] = useState<
+    string | null
+  >(user?.coverImage ? getAssetUrl(user.coverImage) : null);
 
-  const PUBLIC_API_URL =
-    process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3598';
-
-  useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        const response = await axios.get(
-          `${PUBLIC_API_URL}/users/profile`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-        dispatch(setUser(response.data));
-      } catch (error) {
-        console.error('Failed to fetch profile', error);
-        showToast('Failed to fetch profile.', 'error');
-      }
-    };
-
-    if (token && !user) {
-      fetchProfile();
-    }
-  }, [token, user, dispatch, showToast, PUBLIC_API_URL]);
-
-  useEffect(() => {
-    if (user) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setName(user.name || '');
-      setBio(user.bio || '');
-      setLocation(user.location || '');
-    }
-  }, [user]);
+  // baseURL handled by api client
 
   const handleAvatarChange = (
     e: React.ChangeEvent<HTMLInputElement>
@@ -77,6 +46,7 @@ export default function UpdateProfileForm() {
         return;
       }
       setAvatar(file);
+      setAvatarPreview(URL.createObjectURL(file));
     }
   };
 
@@ -90,6 +60,7 @@ export default function UpdateProfileForm() {
         return;
       }
       setCoverImage(file);
+      setCoverImagePreview(URL.createObjectURL(file));
     }
   };
 
@@ -108,23 +79,15 @@ export default function UpdateProfileForm() {
     }
 
     try {
-      await axios.patch(`${PUBLIC_API_URL}/users/profile`, formData, {
+      await api.patch(`/users/profile`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
-          Authorization: `Bearer ${token}`,
         },
       });
       showToast('Profile updated successfully!', 'success');
       const fetchProfile = async () => {
         try {
-          const response = await axios.get(
-            `${PUBLIC_API_URL}/users/profile`,
-            {
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
-            }
-          );
+          const response = await api.get(`/users/profile`);
           dispatch(setUser(response.data));
         } catch (error) {
           console.error('Failed to fetch profile', error);
@@ -139,80 +102,137 @@ export default function UpdateProfileForm() {
   };
 
   return (
-    <Card className="w-full max-w-2xl mx-auto">
-      <CardHeader>
-        <CardTitle>Update Profile</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="space-y-2">
-            <Label htmlFor="username">Username</Label>
-            <Input
-              id="username"
-              type="text"
-              placeholder="Your username"
-              value={user?.username || ''}
-              disabled
-            />
+    <form onSubmit={handleSubmit} className="space-y-6">
+      {/* Media Section */}
+      <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        {/* Avatar */}
+        <div className="rounded-xl border bg-card p-4 sm:p-5 lg:col-span-1">
+          <div className="flex items-center justify-between mb-3">
+            <Label htmlFor="avatar" className="font-medium">
+              Avatar Image
+            </Label>
+            <span className="text-[11px] text-muted-foreground">
+              80x80
+            </span>
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="name">Name</Label>
-            <Input
-              id="name"
-              type="text"
-              placeholder="Your name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-            />
+          <div className="flex items-center gap-4">
+            <div className="h-20 w-20 rounded-full overflow-hidden ring-1 ring-border bg-muted shrink-0">
+              {avatarPreview ? (
+                <Image
+                  src={avatarPreview}
+                  alt="Avatar preview"
+                  width={80}
+                  height={80}
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <div className="h-full w-full grid place-items-center text-xs text-muted-foreground">
+                  No image
+                </div>
+              )}
+            </div>
+            <div className="flex-1">
+              <Input
+                id="avatar"
+                type="file"
+                accept="image/jpeg, image/png, image/jpg"
+                onChange={handleAvatarChange}
+                className="max-w-xs"
+              />
+              <p className="mt-1 text-xs text-muted-foreground">
+                JPG, JPEG, PNG, max 5MB.
+              </p>
+            </div>
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="bio">Bio</Label>
-            <Textarea
-              id="bio"
-              placeholder="Tell us about yourself"
-              value={bio}
-              onChange={(e) => setBio(e.target.value)}
-            />
+        </div>
+        {/* Cover */}
+        <div className="rounded-xl border bg-card p-4 sm:p-5 lg:col-span-2">
+          <div className="flex items-center justify-between mb-3">
+            <Label htmlFor="coverImage" className="font-medium">
+              Cover Image
+            </Label>
+            <span className="text-[11px] text-muted-foreground">
+              Recommended 1200x400
+            </span>
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="location">Location</Label>
-            <Input
-              id="location"
-              type="text"
-              placeholder="Your location"
-              value={location}
-              onChange={(e) => setLocation(e.target.value)}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="avatar">Avatar Image</Label>
-            <Input
-              id="avatar"
-              type="file"
-              accept="image/jpeg, image/png, image/jpg"
-              onChange={handleAvatarChange}
-            />
-            <p className="text-xs text-muted-foreground">
-              JPG, JPEG, PNG, max 5MB.
-            </p>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="coverImage">Cover Image</Label>
+          <div className="space-y-3">
+            <div className="w-full overflow-hidden rounded-lg ring-1 ring-border bg-muted h-32 sm:h-48 md:h-56 lg:h-64 relative">
+              {coverImagePreview ? (
+                <Image
+                  src={coverImagePreview}
+                  alt="Cover preview"
+                  fill
+                  className="object-cover"
+                />
+              ) : (
+                <div className="h-full w-full grid place-items-center text-xs text-muted-foreground">
+                  No image
+                </div>
+              )}
+            </div>
             <Input
               id="coverImage"
               type="file"
               accept="image/jpeg, image/png, image/jpg"
               onChange={handleCoverImageChange}
+              className="max-w-xs"
             />
             <p className="text-xs text-muted-foreground">
               JPG, JPEG, PNG, max 5MB.
             </p>
           </div>
-          <Button type="submit" className="w-full">
-            Update Profile
-          </Button>
-        </form>
-      </CardContent>
-    </Card>
+        </div>
+      </div>
+
+      {/* Text Fields */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="space-y-1.5">
+          <Label htmlFor="username">Username</Label>
+          <Input
+            id="username"
+            type="text"
+            placeholder="Your username"
+            value={user?.username || ''}
+            disabled
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="name">Name</Label>
+          <Input
+            id="name"
+            type="text"
+            placeholder="Your name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+          />
+        </div>
+        <div className="space-y-1.5 sm:col-span-2 lg:col-span-3">
+          <Label htmlFor="bio">Bio</Label>
+          <Textarea
+            id="bio"
+            placeholder="Tell us about yourself"
+            value={bio}
+            onChange={(e) => setBio(e.target.value)}
+            className="min-h-[120px]"
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="location">Location</Label>
+          <Input
+            id="location"
+            type="text"
+            placeholder="Your location"
+            value={location}
+            onChange={(e) => setLocation(e.target.value)}
+          />
+        </div>
+      </div>
+
+      <div className="flex items-center justify-end pt-2">
+        <Button type="submit" className="rounded-full px-5">
+          Save Changes
+        </Button>
+      </div>
+    </form>
   );
 }

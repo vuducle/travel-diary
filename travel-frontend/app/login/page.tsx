@@ -2,8 +2,8 @@
 import PublicGuard from '@/components/public-guard';
 import { useState } from 'react';
 import { useDispatch } from 'react-redux';
-import axios from 'axios';
-import { setToken } from '@/lib/redux/authSlice';
+import api from '@/lib/api/client';
+import { setToken, setUser } from '@/lib/redux/authSlice';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import Image from 'next/image';
@@ -27,20 +27,30 @@ export default function LoginPage() {
   const router = useRouter();
   const { showToast } = useToast();
 
-  const PUBLIC_API_URL =
-    process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3598';
+  // Base URL handled by api client
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const response = await axios.post(
-        `${PUBLIC_API_URL}/auth/login`,
+      const response = await api.post(
+        `/auth/login`,
         {
           email,
           password,
-        }
+        },
+        { withCredentials: true }
       );
       dispatch(setToken(response.data.accessToken));
+      // Hydrate full profile after login so username/coverImage are available
+      try {
+        const me = await api.get('/users/profile');
+        if (me?.data) {
+          dispatch(setUser(me.data));
+        }
+      } catch {
+        // Non-fatal: UI will still work with JWT-decoded minimal user
+        console.warn('Unable to fetch profile after login');
+      }
       showToast('Login successful!', 'success');
       router.push('/dashboard');
     } catch (error) {

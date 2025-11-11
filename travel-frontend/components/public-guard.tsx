@@ -1,9 +1,10 @@
 'use client';
 
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '@/lib/redux/store';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { clearToken } from '@/lib/redux/authSlice';
 
 interface User {
   id: string;
@@ -28,20 +29,43 @@ interface AuthStateWithPersist extends RootState {
   };
 }
 
-export default function PublicGuard({ children }: { children: React.ReactNode }) {
+export default function PublicGuard({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const router = useRouter();
-  const { token, _persist } = useSelector((state: AuthStateWithPersist) => state.auth);
+  const dispatch = useDispatch();
+  const { token, _persist } = useSelector(
+    (state: AuthStateWithPersist) => state.auth
+  );
   const [isChecking, setIsChecking] = useState(true);
+
+  const isTokenValid = (jwt: string | null): boolean => {
+    if (!jwt) return false;
+    try {
+      const payload = JSON.parse(atob(jwt.split('.')[1]));
+      if (payload?.exp && typeof payload.exp === 'number') {
+        return Date.now() < payload.exp * 1000;
+      }
+      return true; // if no exp, treat as valid
+    } catch {
+      return false;
+    }
+  };
 
   useEffect(() => {
     if (_persist.rehydrated) {
-      if (token) {
+      if (token && isTokenValid(token)) {
         router.replace('/dashboard');
       } else {
+        if (token && !isTokenValid(token)) {
+          dispatch(clearToken());
+        }
         setTimeout(() => setIsChecking(false), 0);
       }
     }
-  }, [_persist.rehydrated, token, router]);
+  }, [_persist.rehydrated, token, router, dispatch]);
 
   if (isChecking) {
     return <div>Loading...</div>; // Or a spinner component

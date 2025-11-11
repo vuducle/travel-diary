@@ -7,6 +7,7 @@ import { store, persistor } from '@/lib/redux/store';
 import { PersistGate } from 'redux-persist/integration/react';
 import ToastProvider from '@/components/ui/toast';
 import 'react-toastify/dist/ReactToastify.css';
+import SessionExpiredModal from '@/components/session-expired-modal';
 
 // Body copy
 const karla = Karla({
@@ -44,6 +45,7 @@ export default function RootLayout({
             <main>{children}</main>
             <Footer />
             <ToastProvider />
+            <SessionExpiredModal />
           </PersistGate>
         </Provider>
       </body>
