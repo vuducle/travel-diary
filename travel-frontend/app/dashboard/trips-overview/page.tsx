@@ -135,7 +135,7 @@ export default function TripsOverviewPage() {
               return (
                 <Link
                   key={trip.id}
-                  href={`/dashboard/trips/${trip.id}`}
+                  href={`/dashboard/trips-overview/${trip.id}`}
                   className="group"
                 >
                   <div className="relative aspect-square rounded-2xl overflow-hidden shadow-[0_10px_25px_rgba(0,0,0,0.15)] ring-1 ring-black/5 transition duration-200 group-hover:scale-[1.02]">
