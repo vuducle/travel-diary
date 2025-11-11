@@ -83,9 +83,9 @@ export default function DashboardLayout({
 
                 <div className="flex gap-3 mt-6 w-full">
                   <Link
-                    href="/dashboard"
+                    href="/dashboard/create-trip"
                     className={`flex-1 rounded-full p-3 flex items-center justify-center transition-colors ${
-                      pathname === '/dashboard'
+                      pathname === '/dashboard/create-trip'
                         ? 'bg-primary text-white'
                         : 'bg-teal-500 hover:bg-teal-600 active:bg-primary text-white'
                     }`}

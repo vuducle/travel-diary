@@ -177,13 +177,14 @@ export default function DashboardNav() {
               </Link>
 
               {/* Create Button */}
-              <button
-                className="p-2.5 rounded-full bg-[#5B7971] hover:bg-[#4a635b] transition-colors shadow-md relative"
-                aria-label="Create"
-                disabled
-              >
-                <Plus className="h-5 w-5 text-white" />
-              </button>
+              <Link href="/dashboard/create-trip">
+                <button
+                  className={navLinkClasses('/dashboard/create-trip')}
+                  aria-label="Create"
+                >
+                  <Plus className="h-5 w-5 text-white" />
+                </button>
+              </Link>
 
               {/* Messages Button */}
               <button
@@ -285,13 +286,19 @@ export default function DashboardNav() {
           </Link>
 
           {/* Create */}
-          <button
-            className="flex flex-col items-center justify-center flex-1 py-2 text-gray-600"
-            disabled
-          >
-            <Plus className="h-6 w-6" />
-            <span className="text-xs mt-1">Create</span>
-          </button>
+          <Link href="/dashboard/create-trip">
+            <button
+              className={cn(
+                'flex flex-col items-center justify-center flex-1 py-2 transition-colors',
+                pathname === '/dashboard/create-trip'
+                  ? 'text-primary'
+                  : 'text-gray-600'
+              )}
+            >
+              <Plus className="h-6 w-6" />
+              <span className="text-xs mt-1">Create</span>
+            </button>
+          </Link>
 
           {/* Messages */}
           <button
