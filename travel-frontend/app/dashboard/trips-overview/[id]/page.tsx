@@ -7,6 +7,7 @@ import { getAssetUrl } from '@/lib/utils/image-utils';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
+import { useMemo } from 'react';
 import { useParams } from 'next/navigation';
 
 interface Location {
@@ -38,7 +39,12 @@ export default function TripLocationsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const params = useParams();
-  const tripId = params?.id;
+  const tripId = useMemo(() => {
+    const raw = (
+      params as Record<string, string | string[] | undefined>
+    )?.id;
+    return Array.isArray(raw) ? raw[0] : raw;
+  }, [params]);
 
   useEffect(() => {
     if (!tripId) return;
