@@ -93,9 +93,9 @@ export default function DashboardLayout({
                     <span className="text-2xl">+</span>
                   </Link>
                   <Link
-                    href="/dashboard"
+                    href="/dashboard/trips-overview"
                     className={`flex-1 rounded-full p-3 flex items-center justify-center transition-colors ${
-                      pathname === '/dashboard'
+                      pathname === '/dashboard/trips-overview'
                         ? 'bg-primary text-white'
                         : 'bg-teal-500 hover:bg-teal-600 active:bg-primary text-white'
                     }`}

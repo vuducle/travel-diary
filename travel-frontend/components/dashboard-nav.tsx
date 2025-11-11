@@ -13,6 +13,7 @@ import {
   Search,
   User as UserIcon,
   LogOut,
+  Briefcase,
 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -121,6 +122,14 @@ export default function DashboardNav() {
                 >
                   <UserIcon className="mr-3 h-4 w-4" />
                   <span>Profile</span>
+                </Link>
+                <Link
+                  href="/dashboard/trips-overview"
+                  className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  onClick={() => setIsDropdownOpen(false)}
+                >
+                  <Briefcase className="mr-3 h-4 w-4" />
+                  <span>My Trips</span>
                 </Link>
                 <button
                   onClick={handleLogout}
@@ -246,7 +255,7 @@ export default function DashboardNav() {
                 {isDropdownOpen && (
                   <div className="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white ring-1 ring-black ring-opacity-5 z-10">
                     <Link
-                      href="/profile"
+                      href="/dashboard/profile"
                       className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                       onClick={() => setIsDropdownOpen(false)}
                     >
