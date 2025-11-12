@@ -7,6 +7,8 @@ import type { Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Button } from '@/components/ui/button';
+import Link from 'next/link';
+import { ArrowLeft } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
@@ -181,8 +183,21 @@ export default function AddLocationPage() {
   return (
     <div className="container mx-auto p-4">
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between gap-4">
           <CardTitle>Add New Location</CardTitle>
+          {tripId && (
+            <Button
+              asChild
+              variant="outline"
+              size="sm"
+              className="shrink-0"
+            >
+              <Link href={`/dashboard/trips-overview/${tripId}`}>
+                <ArrowLeft className="h-4 w-4 mr-1" /> Back to
+                Overview
+              </Link>
+            </Button>
+          )}
         </CardHeader>
         <CardContent>
           <form

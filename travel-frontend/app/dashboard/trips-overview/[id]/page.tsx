@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { getAssetUrl } from '@/lib/utils/image-utils';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { ArrowLeft } from 'lucide-react';
 import { Plus } from 'lucide-react';
 import { useMemo } from 'react';
 import { useParams } from 'next/navigation';
@@ -90,13 +91,28 @@ export default function TripLocationsPage() {
           <h1 className="text-3xl md:text-4xl font-semibold">
             {trip ? trip.title : 'Trip Locations'}
           </h1>
-          <Button asChild className="hidden md:inline-flex">
-            <Link
-              href={`/dashboard/trips-overview/${tripId}/add-location`}
-            >
-              Add New Location
-            </Link>
-          </Button>
+          <div className="flex flex-between">
+            {tripId && (
+              <Button
+                asChild
+                variant="outline"
+                size="sm"
+                className="shrink-0  mr-2 md:inline-flex"
+              >
+                <Link href={`/dashboard/trips-overview/`}>
+                  <ArrowLeft className="h-4 w-4 mr-1" /> Back to
+                  Overview
+                </Link>
+              </Button>
+            )}
+            <Button asChild className="hidden md:inline-flex">
+              <Link
+                href={`/dashboard/trips-overview/${tripId}/add-location`}
+              >
+                Add New Location
+              </Link>
+            </Button>
+          </div>
         </div>
 
         <div className="grid gap-6 sm:gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
