@@ -8,6 +8,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import { Plus } from 'lucide-react';
+import UpdateTripModal from '@/components/update-trip-modal';
 import { useMemo } from 'react';
 import { useParams } from 'next/navigation';
 
@@ -92,7 +93,7 @@ export default function TripLocationsPage() {
           <h1 className="text-3xl md:text-4xl font-semibold">
             {trip ? trip.title : 'Trip Locations'}
           </h1>
-          <div className="flex flex-between">
+          <div className="flex items-center">
             {tripId && (
               <Button
                 asChild
@@ -106,13 +107,17 @@ export default function TripLocationsPage() {
                 </Link>
               </Button>
             )}
-            <Button asChild className="hidden md:inline-flex">
-              <Link
-                href={`/dashboard/trips-overview/${tripId}/add-location`}
-              >
-                Add New Location
-              </Link>
-            </Button>
+            {/* Btn */}
+            <div className="ml-auto flex items-center">
+              {trip && <UpdateTripModal trip={trip} />}
+              <Button asChild className="hidden md:inline-flex ml-2">
+                <Link
+                  href={`/dashboard/trips-overview/${tripId}/add-location`}
+                >
+                  Add New Location
+                </Link>
+              </Button>
+            </div>
           </div>
         </div>
 
@@ -173,7 +178,6 @@ export default function TripLocationsPage() {
               );
             })}
         </div>
-
         {!loading && !error && locations.length === 0 && (
           <div className="mt-10 text-center text-gray-600">
             You haven&apos;t added any locations to this trip yet.
