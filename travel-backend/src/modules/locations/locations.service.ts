@@ -7,6 +7,8 @@ import { PrismaService } from '../../database/prisma.module';
 import { CreateLocationDto } from './dto/create-location.dto';
 import { UpdateLocationDto } from './dto/update-location.dto';
 import type { Prisma } from '@prisma/client';
+import * as fs from 'fs/promises';
+import * as path from 'path';
 
 @Injectable()
 export class LocationsService {
@@ -46,6 +48,7 @@ export class LocationsService {
       data: {
         name: dto.name,
         country: dto.country,
+        street: dto.street,
         lat: typeof dto.lat === 'number' ? dto.lat : undefined,
         lng: typeof dto.lng === 'number' ? dto.lng : undefined,
         tripId: dto.tripId,
@@ -111,6 +114,12 @@ export class LocationsService {
   ) {
     const loc = await this.ensureLocationOwnership(userId, id);
 
+    // Get the current location to access the old cover image
+    const currentLocation = await this.prisma.location.findUnique({
+      where: { id },
+      select: { coverImage: true },
+    });
+
     if (typeof dto.parentId !== 'undefined' && dto.parentId !== loc.id) {
       if (dto.parentId) {
         const parent = await this.prisma.location.findUnique({
@@ -131,6 +140,7 @@ export class LocationsService {
       data: {
         name: dto.name,
         country: dto.country,
+        street: dto.street,
         lat: typeof dto.lat === 'number' ? dto.lat : undefined,
         lng: typeof dto.lng === 'number' ? dto.lng : undefined,
         coverImage: typeof coverUrl === 'string' ? coverUrl : undefined,
@@ -140,6 +150,14 @@ export class LocationsService {
             : (dto.parentId ?? null),
       },
     });
+
+    // Delete old cover image if a new one was uploaded
+    if (coverUrl && currentLocation?.coverImage) {
+      await this.deleteCoverFileSafe(currentLocation.coverImage).catch(
+        () => undefined,
+      );
+    }
+
     return updated;
   }
 
@@ -168,5 +186,21 @@ export class LocationsService {
       data: { coverImage: coverUrl },
     });
     return updated;
+  }
+
+  private async deleteCoverFileSafe(coverImageUrl: string) {
+    try {
+      const relative = coverImageUrl.replace(/^\/+/, '');
+      const absolute = path.resolve(process.cwd(), relative);
+      const uploadsLocationsDir = path.resolve(
+        process.cwd(),
+        'uploads',
+        'locations',
+      );
+      if (!absolute.startsWith(uploadsLocationsDir)) return;
+      await fs.unlink(absolute);
+    } catch {
+      // ignore errors
+    }
   }
 }

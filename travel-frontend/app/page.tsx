@@ -1,8 +1,8 @@
-import Hero from '@/components/hero';
-import Features from '@/components/features';
-import AppShowcase from '@/components/app-showcase';
-import QuoteBanner from '@/components/quote-banner';
-import PublicGuard from '@/components/public-guard';
+import Hero from '@/components/landingpage/hero';
+import Features from '@/components/landingpage/features';
+import AppShowcase from '@/components/landingpage/app-showcase';
+import QuoteBanner from '@/components/landingpage/quote-banner';
+import PublicGuard from '@/components/core/public-guard';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {

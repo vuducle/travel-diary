@@ -10,7 +10,7 @@ import {
   DialogClose,
   DialogFooter,
 } from '@/components/ui/dialog';
-import { Button } from './ui/button';
+import { Button } from '../ui/button';
 import { Trash, X } from 'lucide-react';
 import { Trip } from '@/lib/redux/tripsSlice';
 import api from '@/lib/api/client';

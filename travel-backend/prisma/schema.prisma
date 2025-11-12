@@ -65,6 +65,7 @@ model Location {
   id         String     @id @default(uuid())
   name       String
   country    String?
+  street     String?
   lat        Float?
   lng        Float?
   coverImage String?

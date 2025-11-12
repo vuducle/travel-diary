@@ -1,12 +1,12 @@
 'use client';
 
-import AuthGuard from '@/components/auth-guard';
+import AuthGuard from '@/components/core/auth-guard';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/lib/redux/store';
 import Image from 'next/image';
 import { getAvatarUrl, getAssetUrl } from '@/lib/utils/image-utils';
 import { Briefcase, User } from 'lucide-react';
-import DashboardNav from '@/components/dashboard-nav';
+import DashboardNav from '@/components/core/dashboard-nav';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 

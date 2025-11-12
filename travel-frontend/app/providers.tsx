@@ -3,7 +3,7 @@ import { Provider } from 'react-redux';
 import { PersistGate } from 'redux-persist/integration/react';
 import { store, persistor } from '@/lib/redux/store';
 import ToastProvider from '@/components/ui/toast';
-import SessionExpiredModal from '@/components/session-expired-modal';
+import SessionExpiredModal from '@/components/core/session-expired-modal';
 import React from 'react';
 
 interface ProvidersProps {

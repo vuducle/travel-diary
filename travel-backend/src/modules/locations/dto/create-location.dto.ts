@@ -14,6 +14,12 @@ export class CreateLocationDto {
   @MaxLength(100)
   country?: string;
 
+  @ApiProperty({ example: 'Nguyen Hue Boulevard', required: false })
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  street?: string;
+
   @ApiProperty({ example: 10.7769, required: false })
   @IsOptional()
   @Transform(({ value }) =>

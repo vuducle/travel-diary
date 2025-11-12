@@ -1,6 +1,12 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { useParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import {
@@ -17,6 +23,7 @@ import {
   MapPinned,
   FileText,
   Folders,
+  Pencil,
 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -24,10 +31,11 @@ import dynamic from 'next/dynamic';
 import api from '@/lib/api/client';
 import { useToast } from '@/hooks/use-toast';
 import { getAssetUrl } from '@/lib/utils/image-utils';
+import UpdateLocationModal from '@/components/location/update-location-modal';
 
 // Dynamically import LocationMap to avoid SSR issues
 const LocationMap = dynamic(
-  () => import('@/components/location-map'),
+  () => import('@/components/core/location-map'),
   {
     ssr: false,
     loading: () => (
@@ -87,30 +95,31 @@ export default function LocationDetailPage() {
   const [location, setLocation] = useState<Location | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
 
-  useEffect(() => {
+  const fetchLocation = useCallback(async () => {
     if (!locationId) return;
 
-    const fetchLocation = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        const response = await api.get(`/locations/${locationId}`);
-        setLocation(response.data);
-      } catch (err) {
-        console.error('Failed to fetch location:', err);
-        setError('Failed to load location details');
-        showToastRef.current(
-          'Failed to load location details',
-          'error'
-        );
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchLocation();
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await api.get(`/locations/${locationId}`);
+      setLocation(response.data);
+    } catch (err) {
+      console.error('Failed to fetch location:', err);
+      setError('Failed to load location details');
+      showToastRef.current(
+        'Failed to load location details',
+        'error'
+      );
+    } finally {
+      setLoading(false);
+    }
   }, [locationId]);
+
+  useEffect(() => {
+    fetchLocation();
+  }, [fetchLocation]);
 
   if (loading) {
     return (
@@ -184,6 +193,18 @@ export default function LocationDetailPage() {
               </Link>
             </Button>
           )}
+        </div>
+
+        {/* Edit Button */}
+        <div className="absolute top-4 right-4 sm:top-6 sm:right-6 z-10">
+          <Button
+            onClick={() => setIsUpdateModalOpen(true)}
+            variant="secondary"
+            size="sm"
+            className="backdrop-blur-md bg-primary/90 hover:bg-primary/80 shadow-lg"
+          >
+            <Pencil className="h-4 w-4 mr-1" /> Edit
+          </Button>
         </div>
 
         {/* Title Overlay */}
@@ -324,7 +345,7 @@ export default function LocationDetailPage() {
         {/* Map Section */}
         {hasValidCoordinates && (
           <Card className="shadow-lg overflow-hidden">
-            <CardHeader className="bg-linear-to-r from-blue-500 to-blue-600 text-white">
+            <CardHeader className="bg-linear-to-r bg-primary text-white">
               <CardTitle className="text-xl sm:text-2xl flex items-center gap-2">
                 <MapPinned className="h-5 w-5" />
                 Interactive Map
@@ -345,6 +366,16 @@ export default function LocationDetailPage() {
           </Card>
         )}
       </div>
+
+      {/* Update Location Modal */}
+      {location && (
+        <UpdateLocationModal
+          open={isUpdateModalOpen}
+          onClose={() => setIsUpdateModalOpen(false)}
+          location={location}
+          onSuccess={fetchLocation}
+        />
+      )}
     </div>
   );
 }

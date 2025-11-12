@@ -24,7 +24,7 @@ import {
 
 // Dynamically import LocationMap to avoid SSR issues with Leaflet
 const LocationMap = dynamic(
-  () => import('@/components/location-map'),
+  () => import('@/components/core/location-map'),
   {
     ssr: false,
     loading: () => (

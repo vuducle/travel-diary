@@ -1,5 +1,5 @@
 'use client';
-import PublicGuard from '@/components/public-guard';
+import PublicGuard from '@/components/core/public-guard';
 import { useState } from 'react';
 import { useDispatch } from 'react-redux';
 import api from '@/lib/api/client';

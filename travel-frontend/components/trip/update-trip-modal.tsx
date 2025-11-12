@@ -10,8 +10,8 @@ import {
   DialogClose,
   DialogFooter,
 } from '@/components/ui/dialog';
-import UpdateTripForm from '@/components/update-trip-form';
-import { Button } from './ui/button';
+import UpdateTripForm from '@/components/trip/update-trip-form';
+import { Button } from '../ui/button';
 import { Pencil, X } from 'lucide-react';
 import { Trip } from '@/lib/redux/tripsSlice';
 

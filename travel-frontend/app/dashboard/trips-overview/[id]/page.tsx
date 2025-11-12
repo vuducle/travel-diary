@@ -8,8 +8,8 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import { Plus } from 'lucide-react';
-import UpdateTripModal from '@/components/update-trip-modal';
-import DeleteTripModal from '@/components/delete-trip-modal';
+import UpdateTripModal from '@/components/trip/update-trip-modal';
+import DeleteTripModal from '@/components/trip/delete-trip-modal';
 import { useMemo } from 'react';
 import { useParams } from 'next/navigation';
 

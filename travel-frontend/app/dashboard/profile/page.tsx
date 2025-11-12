@@ -4,7 +4,7 @@ import { useSelector } from 'react-redux';
 import { RootState } from '@/lib/redux/store';
 import Image from 'next/image';
 import { getAvatarUrl, getAssetUrl } from '@/lib/utils/image-utils';
-import UpdateProfileModal from '@/components/update-profile-modal';
+import UpdateProfileModal from '@/components/profile/update-profile-modal';
 import { useEffect, useState } from 'react';
 import api from '@/lib/api/client';
 import Link from 'next/link';

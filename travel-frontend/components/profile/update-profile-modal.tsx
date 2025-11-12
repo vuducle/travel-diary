@@ -9,8 +9,8 @@ import {
   DialogDescription,
   DialogClose,
 } from '@/components/ui/dialog';
-import UpdateProfileForm from '@/components/update-profile-form';
-import { Button } from './ui/button';
+import UpdateProfileForm from '@/components/profile/update-profile-form';
+import { Button } from '../ui/button';
 import { Pencil, X } from 'lucide-react';
 import React from 'react';
 

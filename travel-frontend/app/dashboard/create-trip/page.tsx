@@ -1,6 +1,6 @@
 'use client';
 
-import CreateTripForm from '@/components/create-trip-form';
+import CreateTripForm from '@/components/trip/create-trip-form';
 
 export default function CreateTripPage() {
   return (
