@@ -5,9 +5,95 @@ import { RootState } from '@/lib/redux/store';
 import Image from 'next/image';
 import { getAvatarUrl, getAssetUrl } from '@/lib/utils/image-utils';
 import UpdateProfileModal from '@/components/update-profile-modal';
+import { useEffect, useState } from 'react';
+import api from '@/lib/api/client';
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+import { Plus, Globe, Lock, Users } from 'lucide-react';
+
+// Let's define a Trip type based on what we know
+interface Trip {
+  id: string;
+  title: string;
+  description: string;
+  startDate: string;
+  endDate: string;
+  coverImage?: string;
+  visibility: 'PUBLIC' | 'PRIVATE' | 'FRIENDS';
+}
 
 export default function ProfilePage() {
   const user = useSelector((state: RootState) => state.auth.user);
+  const [trips, setTrips] = useState<Trip[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchTrips = async () => {
+      try {
+        setLoading(true);
+        const response = await api.get('/trips');
+        setTrips(response.data);
+        setError(null);
+      } catch (err) {
+        setError('Failed to fetch trips.');
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTrips();
+  }, []);
+
+  const formatRange = (startIso: string, endIso: string) => {
+    const start = new Date(startIso);
+    const end = new Date(endIso);
+    try {
+      const sameYear = start.getFullYear() === end.getFullYear();
+      if (sameYear) {
+        return `${start.toLocaleDateString(undefined, {
+          month: 'short',
+        })} – ${end.toLocaleDateString(undefined, {
+          month: 'short',
+          year: 'numeric',
+        })}`;
+      }
+      return `${start.toLocaleDateString(undefined, {
+        month: 'short',
+        year: 'numeric',
+      })} – ${end.toLocaleDateString(undefined, {
+        month: 'short',
+        year: 'numeric',
+      })}`;
+    } catch {
+      return `${start.toLocaleDateString()} – ${end.toLocaleDateString()}`;
+    }
+  };
+
+  const getYearLabel = (startIso: string, endIso: string) => {
+    const start = new Date(startIso);
+    const end = new Date(endIso);
+    const startYear = start.getFullYear();
+    const endYear = end.getFullYear();
+    if (!isFinite(startYear) || !isFinite(endYear)) return '';
+    return startYear === endYear
+      ? `${startYear}`
+      : `${startYear}–${endYear}`;
+  };
+
+  const getVisibilityIcon = (visibility: Trip['visibility']) => {
+    switch (visibility) {
+      case 'PUBLIC':
+        return <Globe className="h-4 w-4 text-white" />;
+      case 'PRIVATE':
+        return <Lock className="h-4 w-4 text-white" />;
+      case 'FRIENDS':
+        return <Users className="h-4 w-4 text-white" />;
+      default:
+        return null;
+    }
+  };
 
   const displayName = user?.name || user?.username || 'Anonymous';
   const avatarUrl = getAvatarUrl(user?.avatarUrl);
@@ -71,6 +157,88 @@ export default function ProfilePage() {
             </div>
           )}
         </div>
+      </div>
+
+      <div className="mt-12">
+        <div className="flex items-center justify-between mb-8">
+          <h2 className="text-2xl font-semibold">My Trips</h2>
+          <Button asChild>
+            <Link href="/dashboard/create-trip">Create New Trip</Link>
+          </Button>
+        </div>
+
+        <div className="grid gap-6 sm:gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+          {loading && (
+            <div className="col-span-full text-center py-8 text-gray-600">
+              Loading trips…
+            </div>
+          )}
+          {error && (
+            <div className="col-span-full text-center py-8 text-red-500">
+              {error}
+            </div>
+          )}
+          {!loading &&
+            !error &&
+            trips.map((trip) => {
+              const cover =
+                getAssetUrl(trip.coverImage) ||
+                '/form/bg-chinatown.jpg';
+              const dateText = formatRange(
+                trip.startDate,
+                trip.endDate
+              );
+              const yearLabel = getYearLabel(
+                trip.startDate,
+                trip.endDate
+              );
+              const displayTitle = yearLabel
+                ? `${trip.title} ${yearLabel}`
+                : trip.title;
+              return (
+                <Link
+                  key={trip.id}
+                  href={`/dashboard/trips-overview/${trip.id}`}
+                  className="group"
+                >
+                  <div className="relative aspect-square rounded-2xl overflow-hidden shadow-[0_10px_25px_rgba(0,0,0,0.15)] ring-1 ring-black/5 transition duration-200 group-hover:scale-[1.02]">
+                    <Image
+                      src={cover}
+                      alt={trip.title}
+                      fill
+                      className="object-cover"
+                    />
+                    {/* top-right visibility icon */}
+                    <div className="absolute top-2 right-2 z-10">
+                      {getVisibilityIcon(trip.visibility)}
+                    </div>
+                    <div className="absolute inset-0 bg-linear-to-t from-black/60 via-black/20 to-transparent" />
+                    <div className="absolute inset-x-0 bottom-0 p-3 sm:p-4">
+                      <div className="text-white/90 text-sm sm:text-base font-medium truncate">
+                        {displayTitle}
+                      </div>
+                      <div className="text-white/80 text-xs sm:text-[13px]">
+                        {dateText}
+                      </div>
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
+        </div>
+
+        {!loading && !error && trips.length === 0 && (
+          <div className="mt-10 text-center text-gray-600">
+            You haven't created any trips yet.
+            <div className="mt-4">
+              <Button asChild>
+                <Link href="/dashboard/create-trip">
+                  Create your first trip
+                </Link>
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

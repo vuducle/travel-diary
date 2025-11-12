@@ -6,7 +6,7 @@ import Image from 'next/image';
 import { getAssetUrl } from '@/lib/utils/image-utils';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
+import { Plus, Globe, Lock, Users } from 'lucide-react';
 
 // Let's define a Trip type based on what we know
 interface Trip {
@@ -78,6 +78,19 @@ export default function TripsOverviewPage() {
       : `${startYear}–${endYear}`;
   };
 
+  const getVisibilityIcon = (visibility: Trip['visibility']) => {
+    switch (visibility) {
+      case 'PUBLIC':
+        return <Globe className="h-4 w-4 text-white" />;
+      case 'PRIVATE':
+        return <Lock className="h-4 w-4 text-white" />;
+      case 'FRIENDS':
+        return <Users className="h-4 w-4 text-white" />;
+      default:
+        return null;
+    }
+  };
+
   return (
     <div className="max-w-7xl mx-auto p-4 md:p-8">
       <div className="bg-white/30 backdrop-blur-xl rounded-3xl border border-white/40 shadow-xl p-6 md:p-10">
@@ -145,6 +158,10 @@ export default function TripsOverviewPage() {
                       fill
                       className="object-cover"
                     />
+                    {/* top-right visibility icon */}
+                    <div className="absolute top-2 right-2 z-10">
+                      {getVisibilityIcon(trip.visibility)}
+                    </div>
                     {/* bottom gradient overlay */}
                     <div className="absolute inset-0 bg-linear-to-t from-black/60 via-black/20 to-transparent" />
                     {/* text overlay */}
