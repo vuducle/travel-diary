@@ -11,6 +11,7 @@ import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import dynamic from 'next/dynamic';
 
 import { useToast } from '@/hooks/use-toast';
 import api from '@/lib/api/client';
@@ -21,9 +22,23 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 
+// Dynamically import LocationMap to avoid SSR issues with Leaflet
+const LocationMap = dynamic(
+  () => import('@/components/location-map'),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-[400px] w-full rounded-lg border border-border flex items-center justify-center bg-muted">
+        <p className="text-muted-foreground">Loading map...</p>
+      </div>
+    ),
+  }
+);
+
 const addLocationSchema = z.object({
   name: z.string().min(1, 'Location name is required'),
   country: z.string().optional(),
+  street: z.string().optional(),
   lat: z.coerce.number().optional(),
   lng: z.coerce.number().optional(),
   coverImage: z.any().optional(),
@@ -41,6 +56,8 @@ type NominatimResult = {
     town?: string;
     village?: string;
     state?: string;
+    road?: string;
+    street?: string;
   };
   name?: string;
 };
@@ -132,6 +149,7 @@ export default function AddLocationPage() {
 
   const applyResult = (r: NominatimResult) => {
     const country = r.address?.country || '';
+    const street = r.address?.road || r.address?.street || '';
     const primaryName =
       r.name || r.display_name.split(',')[0]?.trim() || '';
     const lat = parseFloat(r.lat);
@@ -139,6 +157,7 @@ export default function AddLocationPage() {
     if (primaryName)
       setValue('name', primaryName, { shouldValidate: true });
     if (country) setValue('country', country);
+    if (street) setValue('street', street);
     if (!Number.isNaN(lat)) setValue('lat', lat);
     if (!Number.isNaN(lng)) setValue('lng', lng);
     showToast('Location selected from OpenStreetMap', 'success');
@@ -181,16 +200,18 @@ export default function AddLocationPage() {
   };
 
   return (
-    <div className="container mx-auto p-4">
+    <div className="container mx-auto p-2 sm:p-4 max-w-4xl">
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between gap-4">
-          <CardTitle>Add New Location</CardTitle>
+        <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-4 p-4 sm:p-6">
+          <CardTitle className="text-lg sm:text-xl">
+            Add New Location
+          </CardTitle>
           {tripId && (
             <Button
               asChild
               variant="outline"
               size="sm"
-              className="shrink-0"
+              className="shrink-0 w-full sm:w-auto"
             >
               <Link href={`/dashboard/trips-overview/${tripId}`}>
                 <ArrowLeft className="h-4 w-4 mr-1" /> Back to
@@ -199,7 +220,7 @@ export default function AddLocationPage() {
             </Button>
           )}
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-4 sm:p-6">
           <form
             onSubmit={handleSubmit(onSubmit)}
             className="space-y-4"
@@ -208,15 +229,16 @@ export default function AddLocationPage() {
               <Label htmlFor="search">
                 Search by name (OpenStreetMap)
               </Label>
-              <div className="flex gap-2 items-center">
+              <div className="flex flex-col sm:flex-row gap-2 items-start sm:items-center">
                 <Input
                   id="search"
                   value={searchQuery}
                   placeholder="e.g., Ho Chi Minh City, Vietnam"
                   onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full"
                 />
                 {isSearching && (
-                  <span className="text-sm text-muted-foreground">
+                  <span className="text-sm text-muted-foreground whitespace-nowrap">
                     Searching…
                   </span>
                 )}
@@ -225,20 +247,20 @@ export default function AddLocationPage() {
                 Type at least 3 characters to search.
               </p>
               {results.length > 0 && (
-                <div className="grid gap-3 sm:grid-cols-2">
+                <div className="grid gap-2 sm:gap-3 grid-cols-1 sm:grid-cols-2">
                   {results.map((r, idx) => (
                     <div
                       key={`${r.lat}-${r.lon}-${idx}`}
-                      className="rounded-md border p-3 cursor-pointer hover:bg-accent"
+                      className="rounded-md border p-3 cursor-pointer hover:bg-accent transition-colors"
                       onClick={() => applyResult(r)}
                     >
-                      <div className="font-medium">
+                      <div className="font-medium text-sm sm:text-base wrap-break-word">
                         {r.display_name.split(',')[0]}
                       </div>
-                      <div className="text-sm text-muted-foreground truncate">
+                      <div className="text-xs sm:text-sm text-muted-foreground truncate">
                         {r.display_name}
                       </div>
-                      <div className="text-xs mt-1">
+                      <div className="text-xs mt-1 text-muted-foreground">
                         Lat: {r.lat} · Lng: {r.lon}
                       </div>
                     </div>
@@ -250,43 +272,62 @@ export default function AddLocationPage() {
             {(() => {
               const selName = watch('name');
               const selCountry = watch('country');
+              const selStreet = watch('street');
               const selLat = watch('lat');
               const selLng = watch('lng');
               const hasAny = Boolean(
-                selName || selCountry || selLat || selLng
+                selName || selCountry || selStreet || selLat || selLng
               );
               if (!hasAny) return null;
+              const hasValidCoordinates =
+                typeof selLat === 'number' &&
+                typeof selLng === 'number' &&
+                !Number.isNaN(selLat) &&
+                !Number.isNaN(selLng);
               return (
                 <Card className="border border-muted">
-                  <CardHeader className="py-3">
-                    <CardTitle className="text-base">
+                  <CardHeader className="py-3 px-4 sm:px-6">
+                    <CardTitle className="text-base sm:text-lg">
                       Selected location
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="pt-0">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
-                      <div>
-                        <span className="text-muted-foreground">
+                  <CardContent className="pt-0 space-y-4 px-4 sm:px-6 pb-4 sm:pb-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 text-sm">
+                      <div className="flex flex-col sm:flex-row sm:gap-1">
+                        <span className="text-muted-foreground font-medium sm:font-normal">
                           Name:{' '}
                         </span>
-                        <span>{selName || '-'}</span>
+                        <span className="wrap-break-word">
+                          {selName || '-'}
+                        </span>
                       </div>
-                      <div>
-                        <span className="text-muted-foreground">
+                      <div className="flex flex-col sm:flex-row sm:gap-1">
+                        <span className="text-muted-foreground font-medium sm:font-normal">
                           Country:{' '}
                         </span>
-                        <span>{selCountry || '-'}</span>
+                        <span className="wrap-break-word">
+                          {selCountry || '-'}
+                        </span>
                       </div>
-                      <div>
-                        <span className="text-muted-foreground">
+
+                      <div className="flex flex-col sm:flex-row sm:gap-1">
+                        <span className="text-muted-foreground font-medium sm:font-normal">
+                          Street:{' '}
+                        </span>
+                        <span className="wrap-break-word">
+                          {selStreet || '-'}
+                        </span>
+                      </div>
+                      <div className="flex flex-col sm:flex-row sm:gap-1">
+                        <span className="text-muted-foreground font-medium sm:font-normal">
                           Latitude:{' '}
                         </span>
                         <span>
                           {typeof selLat === 'number' ? selLat : '-'}
                         </span>
                       </div>
-                      <div>
-                        <span className="text-muted-foreground">
+                      <div className="flex flex-col sm:flex-row sm:gap-1">
+                        <span className="text-muted-foreground font-medium sm:font-normal">
                           Longitude:{' '}
                         </span>
                         <span>
@@ -294,13 +335,28 @@ export default function AddLocationPage() {
                         </span>
                       </div>
                     </div>
-                    <div className="mt-3">
+
+                    {/* Map Display */}
+                    {hasValidCoordinates && (
+                      <div className="mt-4">
+                        <LocationMap
+                          lat={selLat}
+                          lng={selLng}
+                          locationName={selName}
+                          street={selStreet}
+                          country={selCountry}
+                        />
+                      </div>
+                    )}
+
+                    <div>
                       <Button
                         type="button"
                         variant="ghost"
                         onClick={() => {
                           setValue('name', '');
                           setValue('country', '');
+                          setValue('street', '');
                           setValue('lat', undefined);
                           setValue('lng', undefined);
                         }}
@@ -333,7 +389,7 @@ export default function AddLocationPage() {
                 placeholder="e.g., Vietnam"
               />
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="lat">Latitude</Label>
                 <Input
@@ -363,7 +419,11 @@ export default function AddLocationPage() {
                 {...register('coverImage')}
               />
             </div>
-            <Button type="submit" disabled={isSubmitting || !tripId}>
+            <Button
+              type="submit"
+              disabled={isSubmitting || !tripId}
+              className="w-full sm:w-auto"
+            >
               {isSubmitting ? 'Adding...' : 'Add Location'}
             </Button>
           </form>
