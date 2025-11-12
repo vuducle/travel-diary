@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import { Plus } from 'lucide-react';
 import UpdateTripModal from '@/components/update-trip-modal';
+import DeleteTripModal from '@/components/delete-trip-modal';
 import { useMemo } from 'react';
 import { useParams } from 'next/navigation';
 
@@ -87,34 +88,36 @@ export default function TripLocationsPage() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto p-4 md:p-8">
-      <div className="bg-white/30 backdrop-blur-xl rounded-3xl border border-white/40 shadow-xl p-6 md:p-10">
-        <div className="flex items-center justify-between mb-8">
-          <h1 className="text-3xl md:text-4xl font-semibold">
+    <div className="max-w-7xl mx-auto p-4 sm:p-6 md:p-8">
+      <div className="bg-white/30 backdrop-blur-xl rounded-3xl border border-white/40 shadow-xl p-4 sm:p-6 md:p-10">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
+          <h1 className="text-3xl md:text-4xl font-semibold mb-4 md:mb-0">
             {trip ? trip.title : 'Trip Locations'}
           </h1>
-          <div className="flex items-center">
+          <div className="flex items-center gap-2">
             {tripId && (
               <Button
                 asChild
                 variant="outline"
                 size="sm"
-                className="shrink-0  mr-2 md:inline-flex"
+                className="shrink-0 md:inline-flex"
               >
                 <Link href={`/dashboard/trips-overview/`}>
-                  <ArrowLeft className="h-4 w-4 mr-1" /> Back to
-                  Overview
+                  <ArrowLeft className="h-4 w-4 md:mr-1" />
+                  <span className="hidden md:inline">Back to Overview</span>
                 </Link>
               </Button>
             )}
             {/* Btn */}
-            <div className="ml-auto flex items-center">
+            <div className="ml-auto flex items-center gap-2">
               {trip && <UpdateTripModal trip={trip} />}
-              <Button asChild className="hidden md:inline-flex ml-2">
+              {trip && <DeleteTripModal trip={trip} />}
+              <Button asChild className="inline-flex">
                 <Link
                   href={`/dashboard/trips-overview/${tripId}/add-location`}
                 >
-                  Add New Location
+                  <Plus className="h-4 w-4 md:mr-1" />
+                  <span className="hidden md:inline">Add New Location</span>
                 </Link>
               </Button>
             </div>

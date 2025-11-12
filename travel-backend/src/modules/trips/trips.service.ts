@@ -168,16 +168,45 @@ export class TripsService {
 
   async removeForUser(userId: string, tripId: string) {
     await this.ensureOwnership(userId, tripId);
+
+    // Fetch existing trip data and related entry images before deletion
     const existing = await this.prisma.trip.findUnique({
       where: { id: tripId },
-      select: { coverImage: true },
+      select: {
+        coverImage: true,
+        entries: {
+          select: {
+            images: {
+              select: { url: true },
+            },
+          },
+        },
+      },
     });
-    await this.prisma.trip.delete({ where: { id: tripId } });
+
+    // Delete all related data in a transaction
+    await this.prisma.$transaction([
+      this.prisma.entry.deleteMany({ where: { tripId } }),
+      this.prisma.location.deleteMany({ where: { tripId } }),
+      this.prisma.trip.delete({ where: { id: tripId } }),
+    ]);
+
+    // Clean up image files from disk
     if (existing?.coverImage) {
       await this.deleteCoverFileSafe(existing.coverImage).catch(
         () => undefined,
       );
     }
+
+    // Delete all entry image files
+    if (existing?.entries) {
+      for (const entry of existing.entries) {
+        for (const image of entry.images) {
+          await this.deleteEntryImageSafe(image.url).catch(() => undefined);
+        }
+      }
+    }
+
     return { message: 'Trip deleted' };
   }
 
@@ -212,6 +241,22 @@ export class TripsService {
       const absolute = path.resolve(process.cwd(), relative);
       const uploadsTripsDir = path.resolve(process.cwd(), 'uploads', 'trips');
       if (!absolute.startsWith(uploadsTripsDir)) return;
+      await fs.unlink(absolute);
+    } catch {
+      // ignore errors
+    }
+  }
+
+  private async deleteEntryImageSafe(imageUrl: string) {
+    try {
+      const relative = imageUrl.replace(/^\/+/, '');
+      const absolute = path.resolve(process.cwd(), relative);
+      const uploadsEntriesDir = path.resolve(
+        process.cwd(),
+        'uploads',
+        'entries',
+      );
+      if (!absolute.startsWith(uploadsEntriesDir)) return;
       await fs.unlink(absolute);
     } catch {
       // ignore errors
