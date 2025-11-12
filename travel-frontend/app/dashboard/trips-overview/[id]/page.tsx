@@ -34,6 +34,7 @@ interface Trip {
   visibility: 'PUBLIC' | 'PRIVATE' | 'FRIENDS';
 }
 
+// NOTE: Dynamic metadata can be added via a server component wrapper; since this is client, we cannot export generateMetadata here.
 export default function TripLocationsPage() {
   const [locations, setLocations] = useState<Location[]>([]);
   const [trip, setTrip] = useState<Trip | null>(null);

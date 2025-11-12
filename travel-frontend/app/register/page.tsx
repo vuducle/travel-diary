@@ -1,4 +1,6 @@
 'use client';
+// NOTE: Cannot export Next.js metadata from a client component.
+// If SEO metadata is needed, convert this to a server component or add a parallel route segment wrapper.
 import PublicGuard from '@/components/public-guard';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';

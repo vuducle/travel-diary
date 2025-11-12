@@ -1,3 +1,11 @@
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'About',
+  description:
+    'Learn about TravelDiary – the platform for documenting and sharing your travel experiences.',
+};
+
 export default function AboutPage() {
   return (
     <section className="mx-auto max-w-3xl px-6 py-16 lg:px-10">

@@ -1,3 +1,9 @@
+import type { Metadata } from 'next';
+export const metadata: Metadata = {
+  title: 'Privacy Policy',
+  description:
+    'Understand how TravelDiary handles and protects your data.',
+};
 export default function PrivacyPage() {
   return (
     <section className="mx-auto max-w-3xl px-6 py-16 lg:px-10">

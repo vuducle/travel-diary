@@ -1,3 +1,10 @@
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Contact',
+  description: 'Get in touch with TravelDiary support and team.',
+};
+
 export default function ContactPage() {
   return (
     <section className="mx-auto max-w-3xl px-6 py-16 lg:px-10">
