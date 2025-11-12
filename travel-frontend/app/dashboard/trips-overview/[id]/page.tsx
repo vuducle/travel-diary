@@ -104,7 +104,9 @@ export default function TripLocationsPage() {
               >
                 <Link href={`/dashboard/trips-overview/`}>
                   <ArrowLeft className="h-4 w-4 md:mr-1" />
-                  <span className="hidden md:inline">Back to Overview</span>
+                  <span className="hidden md:inline">
+                    Back to Overview
+                  </span>
                 </Link>
               </Button>
             )}
@@ -117,7 +119,9 @@ export default function TripLocationsPage() {
                   href={`/dashboard/trips-overview/${tripId}/add-location`}
                 >
                   <Plus className="h-4 w-4 md:mr-1" />
-                  <span className="hidden md:inline">Add New Location</span>
+                  <span className="hidden md:inline">
+                    Add New Location
+                  </span>
                 </Link>
               </Button>
             </div>
@@ -158,8 +162,12 @@ export default function TripLocationsPage() {
                 getAssetUrl(location.coverImage) ||
                 '/form/bg-chinatown.jpg';
               return (
-                <div key={location.id} className="group">
-                  <div className="relative aspect-video rounded-2xl overflow-hidden shadow-[0_10px_25px_rgba(0,0,0,0.15)] ring-1 ring-black/5 transition duration-200 group-hover:scale-[1.02]">
+                <Link
+                  key={location.id}
+                  href={`/dashboard/trips-overview/${tripId}/location/${location.id}`}
+                  className="group block"
+                >
+                  <div className="relative aspect-video rounded-2xl overflow-hidden shadow-[0_10px_25px_rgba(0,0,0,0.15)] ring-1 ring-black/5 transition duration-200 group-hover:scale-[1.02] cursor-pointer">
                     <Image
                       src={cover}
                       alt={location.name}
@@ -177,7 +185,7 @@ export default function TripLocationsPage() {
                       </div>
                     </div>
                   </div>
-                </div>
+                </Link>
               );
             })}
         </div>
