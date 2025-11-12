@@ -1,6 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.module';
 import { UpdateProfileDto } from './dto/update-profile.dto';
+import { promises as fs } from 'fs';
+import * as path from 'path';
 
 interface User {
   id: string;
@@ -26,6 +28,12 @@ export class UsersService {
     avatarUrl?: string,
     coverImage?: string,
   ) {
+    // Fetch existing user to get old avatar/cover URLs before updating
+    const existingUser = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { avatarUrl: true, coverImage: true },
+    });
+
     const updateData: Partial<UpdateProfileDto> & {
       avatarUrl?: string;
       coverImage?: string;
@@ -58,7 +66,43 @@ export class UsersService {
       },
     });
 
+    // Delete old files after successful DB update
+    if (avatarUrl && existingUser?.avatarUrl) {
+      await this.deleteImageFileSafe(existingUser.avatarUrl, 'avatars').catch(
+        () => undefined,
+      );
+    }
+    if (coverImage && existingUser?.coverImage) {
+      await this.deleteImageFileSafe(existingUser.coverImage, 'covers').catch(
+        () => undefined,
+      );
+    }
+
     return user;
+  }
+
+  /**
+   * Safely delete an image file from the uploads directory.
+   * @param imageUrl - The public URL of the image (e.g., '/uploads/avatars/file.webp')
+   * @param subdir - The subdirectory within uploads (e.g., 'avatars' or 'covers')
+   */
+  private async deleteImageFileSafe(imageUrl: string, subdir: string) {
+    try {
+      // Convert public URL to absolute file path
+      const relative = imageUrl.replace(/^\/+/, '');
+      const absolute = path.resolve(process.cwd(), relative);
+
+      // Ensure the file is within the expected uploads subdirectory for security
+      const uploadsDir = path.resolve(process.cwd(), 'uploads', subdir);
+      if (!absolute.startsWith(uploadsDir)) {
+        // File is outside expected directory, skip deletion
+        return;
+      }
+
+      await fs.unlink(absolute);
+    } catch {
+      // Ignore errors (file may not exist, or permissions issue)
+    }
   }
 
   async getProfile(userId: string) {
@@ -114,7 +158,7 @@ export class UsersService {
       id: '1',
       email: 'julianguyen@test.com',
       username: 'julianguyen',
-      name: 'Julian Nguyen',
+      name: 'Julia Nguyen',
       avatarUrl: null,
       role: 'ADMIN',
       bio: null,
@@ -128,7 +172,7 @@ export class UsersService {
       username: 'wendyameilya',
       name: 'Wendy Ameilya',
       avatarUrl: null,
-      role: 'USER',
+      role: 'ADMIN',
       bio: null,
       location: null,
       createdAt: new Date(),
