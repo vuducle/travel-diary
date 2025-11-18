@@ -25,7 +25,7 @@ export class LocationsService {
   private async ensureLocationOwnership(userId: string, locationId: string) {
     const loc = await this.prisma.location.findUnique({
       where: { id: locationId },
-      select: { id: true, tripId: true },
+      select: { id: true, tripId: true, coverImage: true },
     });
     if (!loc) throw new NotFoundException('Location not found');
     await this.ensureTripOwnership(userId, loc.tripId);
@@ -162,21 +162,45 @@ export class LocationsService {
   }
 
   async remove(userId: string, id: string) {
-    await this.ensureLocationOwnership(userId, id);
+    const loc = await this.ensureLocationOwnership(userId, id);
+
     const childrenCount = await this.prisma.location.count({
       where: { parentId: id },
     });
-    if (childrenCount > 0)
+    if (childrenCount > 0) {
       throw new BadRequestException('Location has children; delete them first');
-    const entriesCount = await this.prisma.entry.count({
+    }
+
+    const entries = await this.prisma.entry.findMany({
       where: { locationId: id },
+      include: { images: true },
     });
-    if (entriesCount > 0)
-      throw new BadRequestException(
-        'Location has entries; reassign or delete entries first',
-      );
+
+    if (entries.length > 0) {
+      const entryIds = entries.map((e) => e.id);
+      const imagesToDelete = entries.flatMap((e) => e.images);
+
+      if (imagesToDelete.length > 0) {
+        await Promise.all(
+          imagesToDelete.map((img) => this.deleteEntryFileSafe(img.url)),
+        );
+      }
+
+      await this.prisma.$transaction([
+        this.prisma.entryImage.deleteMany({
+          where: { entryId: { in: entryIds } },
+        }),
+        this.prisma.entry.deleteMany({ where: { id: { in: entryIds } } }),
+      ]);
+    }
+
+    if (loc.coverImage) {
+      await this.deleteCoverFileSafe(loc.coverImage);
+    }
+
     await this.prisma.location.delete({ where: { id } });
-    return { message: 'Location deleted' };
+
+    return { message: 'Location and all its entries have been deleted' };
   }
 
   async updateCoverImage(userId: string, id: string, coverUrl: string) {
@@ -198,6 +222,22 @@ export class LocationsService {
         'locations',
       );
       if (!absolute.startsWith(uploadsLocationsDir)) return;
+      await fs.unlink(absolute);
+    } catch {
+      // ignore errors
+    }
+  }
+
+  private async deleteEntryFileSafe(imageUrl: string) {
+    try {
+      const relative = imageUrl.replace(/^\/+/, '');
+      const absolute = path.resolve(process.cwd(), relative);
+      const uploadsEntriesDir = path.resolve(
+        process.cwd(),
+        'uploads',
+        'entries',
+      );
+      if (!absolute.startsWith(uploadsEntriesDir)) return;
       await fs.unlink(absolute);
     } catch {
       // ignore errors

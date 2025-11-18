@@ -24,6 +24,7 @@ import {
   FileText,
   Folders,
   Pencil,
+  Trash,
 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -32,6 +33,7 @@ import api from '@/lib/api/client';
 import { useToast } from '@/hooks/use-toast';
 import { getAssetUrl } from '@/lib/utils/image-utils';
 import UpdateLocationModal from '@/components/location/update-location-modal';
+import DeleteLocationModal from '@/components/location/delete-location-modal';
 
 // Dynamically import LocationMap to avoid SSR issues
 const LocationMap = dynamic(
@@ -96,6 +98,7 @@ export default function LocationDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   const fetchLocation = useCallback(async () => {
     if (!locationId) return;
@@ -195,8 +198,8 @@ export default function LocationDetailPage() {
           )}
         </div>
 
-        {/* Edit Button */}
-        <div className="absolute top-4 right-4 sm:top-6 sm:right-6 z-10">
+        {/* Action Buttons */}
+        <div className="absolute top-4 right-4 sm:top-6 sm:right-6 z-10 flex gap-2">
           <Button
             onClick={() => setIsUpdateModalOpen(true)}
             variant="secondary"
@@ -204,6 +207,14 @@ export default function LocationDetailPage() {
             className="backdrop-blur-md bg-primary/90 hover:bg-primary/80 shadow-lg"
           >
             <Pencil className="h-4 w-4 mr-1" /> Edit
+          </Button>
+          <Button
+            onClick={() => setIsDeleteModalOpen(true)}
+            variant="destructive"
+            size="sm"
+            className="backdrop-blur-md bg-red-500/80 hover:bg-red-500/70 shadow-lg"
+          >
+            <Trash className="h-4 w-4 mr-1" /> Delete
           </Button>
         </div>
 
@@ -236,17 +247,17 @@ export default function LocationDetailPage() {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
           {location._count && (
             <>
-              <Card className="shadow-md hover:shadow-lg transition-shadow">
+            { /*<Card className="shadow-md hover:shadow-lg transition-shadow">
                 <CardContent className="p-4 text-center">
                   <Folders className="h-8 w-8 mx-auto mb-2 text-blue-500" />
                   <p className="text-2xl font-bold">
                     {location._count.children}
                   </p>
-                  <p className="text-xs text-muted-foreground">
+                     <p className="text-xs text-muted-foreground">
                     Sub-locations
                   </p>
                 </CardContent>
-              </Card>
+              </Card>*/ }
               <Card className="shadow-md hover:shadow-lg transition-shadow">
                 <CardContent className="p-4 text-center">
                   <FileText className="h-8 w-8 mx-auto mb-2 text-green-500" />
@@ -341,6 +352,21 @@ export default function LocationDetailPage() {
             </div>
           </CardContent>
         </Card>
+          <Card className="shadow-lg">
+              <CardHeader>
+                  <CardTitle className="text-xl sm:text-2xl flex items-center gap-2">
+                      <MapPin className="h-5 w-5 text-primary" />
+                      Entries
+                  </CardTitle>
+                  <CardContent className="space-y-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                          {/*
+                          * TODO: here comes a grid to create entries
+                          */}
+                      </div>
+                  </CardContent>
+              </CardHeader>
+          </Card>
 
         {/* Map Section */}
         {hasValidCoordinates && (
@@ -374,6 +400,15 @@ export default function LocationDetailPage() {
           onClose={() => setIsUpdateModalOpen(false)}
           location={location}
           onSuccess={fetchLocation}
+        />
+      )}
+
+      {/* Delete Location Modal */}
+      {location && (
+        <DeleteLocationModal
+          open={isDeleteModalOpen}
+          onClose={() => setIsDeleteModalOpen(false)}
+          location={location}
         />
       )}
     </div>

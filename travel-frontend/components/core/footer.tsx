@@ -11,7 +11,7 @@ export default function Footer() {
           </div>
           <nav className="flex flex-wrap items-center gap-6 text-sm md:justify-end justify-center">
             <Link
-              href="/travel-frontend/public"
+              href="/"
               className="hover:underline text-[--color-link]"
             >
               Home
