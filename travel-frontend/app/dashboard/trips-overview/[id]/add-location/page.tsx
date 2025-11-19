@@ -12,6 +12,7 @@ import { ArrowLeft } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import dynamic from 'next/dynamic';
+import { Spinner } from '@/components/ui/spinner';
 
 import { useToast } from '@/hooks/use-toast';
 import api from '@/lib/api/client';
@@ -29,7 +30,7 @@ const LocationMap = dynamic(
     ssr: false,
     loading: () => (
       <div className="h-[400px] w-full rounded-lg border border-border flex items-center justify-center bg-muted">
-        <p className="text-muted-foreground">Loading map...</p>
+        <Spinner label="Loading map..." />
       </div>
     ),
   }

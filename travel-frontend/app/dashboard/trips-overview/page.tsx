@@ -7,6 +7,7 @@ import { getAssetUrl } from '@/lib/utils/image-utils';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Plus, Globe, Lock, Users } from 'lucide-react';
+import { Spinner } from '@/components/ui/spinner';
 
 // Let's define a Trip type based on what we know
 interface Trip {
@@ -120,7 +121,7 @@ export default function TripsOverviewPage() {
           {/* Trip cards */}
           {loading && (
             <div className="col-span-full text-center py-8 text-gray-600">
-              Loading trips…
+              <Spinner label="Loading trips..." />
             </div>
           )}
           {error && (

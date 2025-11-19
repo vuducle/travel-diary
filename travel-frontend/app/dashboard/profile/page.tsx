@@ -10,6 +10,7 @@ import api from '@/lib/api/client';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Plus, Globe, Lock, Users } from 'lucide-react';
+import { Spinner } from '@/components/ui/spinner';
 
 // Let's define a Trip type based on what we know
 interface Trip {
@@ -170,7 +171,7 @@ export default function ProfilePage() {
         <div className="grid gap-6 sm:gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
           {loading && (
             <div className="col-span-full text-center py-8 text-gray-600">
-              Loading trips…
+              <Spinner label="Loading trips..." />
             </div>
           )}
           {error && (

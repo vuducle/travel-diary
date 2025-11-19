@@ -5,6 +5,7 @@ import { RootState } from '@/lib/redux/store';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { clearToken } from '@/lib/redux/authSlice';
+import { Spinner } from '@/components/ui/spinner';
 
 interface User {
   id: string;
@@ -68,7 +69,7 @@ export default function PublicGuard({
   }, [_persist.rehydrated, token, router, dispatch]);
 
   if (isChecking) {
-    return <div>Loading...</div>; // Or a spinner component
+    return <Spinner fullScreen label="Checking session..." />;
   }
 
   return <>{children}</>;

@@ -16,15 +16,15 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import {
-    ArrowLeft,
-    MapPin,
-    Globe,
-    Navigation,
-    MapPinned,
-    FileText,
-    Folders,
-    Pencil,
-    Trash, Plus,
+  ArrowLeft,
+  MapPin,
+  Globe,
+  Navigation,
+  MapPinned,
+  FileText,
+  Pencil,
+  Trash,
+  Plus,
 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -34,6 +34,7 @@ import { useToast } from '@/hooks/use-toast';
 import { getAssetUrl } from '@/lib/utils/image-utils';
 import UpdateLocationModal from '@/components/location/update-location-modal';
 import DeleteLocationModal from '@/components/location/delete-location-modal';
+import { Spinner } from '@/components/ui/spinner';
 
 // Dynamically import LocationMap to avoid SSR issues
 const LocationMap = dynamic(
@@ -42,7 +43,7 @@ const LocationMap = dynamic(
     ssr: false,
     loading: () => (
       <div className="h-[400px] w-full rounded-lg border border-border flex items-center justify-center bg-muted">
-        <p className="text-muted-foreground">Loading map...</p>
+        <Spinner label="Loading map..." />
       </div>
     ),
   }
@@ -99,6 +100,14 @@ export default function LocationDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  type EntrySummary = {
+    id: number | string;
+    title: string;
+    date: string;
+    images?: { id?: string; url: string }[];
+  };
+  const [entries, setEntries] = useState<EntrySummary[]>([]);
+  const [entriesLoading, setEntriesLoading] = useState(false);
 
   const fetchLocation = useCallback(async () => {
     if (!locationId) return;
@@ -124,18 +133,33 @@ export default function LocationDetailPage() {
     fetchLocation();
   }, [fetchLocation]);
 
+  // fetch entries for this location
+  useEffect(() => {
+    let cancelled = false;
+    const fetchEntries = async () => {
+      if (!location?.id) return;
+      try {
+        setEntriesLoading(true);
+        const resp = await api.get('/entries', {
+          params: { locationId: location.id, tripId },
+        });
+        if (cancelled) return;
+        setEntries(resp.data.items || resp.data || []);
+      } catch (e) {
+        // ignore; entries are optional
+        console.error('Failed to load entries', e);
+      } finally {
+        if (!cancelled) setEntriesLoading(false);
+      }
+    };
+    fetchEntries();
+    return () => {
+      cancelled = true;
+    };
+  }, [location?.id, tripId]);
+
   if (loading) {
-    return (
-      <div className="container mx-auto p-2 sm:p-4 max-w-4xl">
-        <Card>
-          <CardContent className="p-8 text-center">
-            <p className="text-muted-foreground">
-              Loading location details...
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-    );
+    return <Spinner fullScreen label="Loading location..." />;
   }
 
   if (error || !location) {
@@ -247,7 +271,7 @@ export default function LocationDetailPage() {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
           {location._count && (
             <>
-            { /*<Card className="shadow-md hover:shadow-lg transition-shadow">
+              {/*<Card className="shadow-md hover:shadow-lg transition-shadow">
                 <CardContent className="p-4 text-center">
                   <Folders className="h-8 w-8 mx-auto mb-2 text-blue-500" />
                   <p className="text-2xl font-bold">
@@ -257,7 +281,7 @@ export default function LocationDetailPage() {
                     Sub-locations
                   </p>
                 </CardContent>
-              </Card>*/ }
+              </Card>*/}
               <Card className="shadow-md hover:shadow-lg transition-shadow">
                 <CardContent className="p-4 text-center">
                   <FileText className="h-8 w-8 mx-auto mb-2 text-green-500" />
@@ -352,32 +376,77 @@ export default function LocationDetailPage() {
             </div>
           </CardContent>
         </Card>
-          <Card className="shadow-lg">
-              <CardHeader>
-                  <CardTitle className="text-xl sm:text-2xl flex items-center gap-2">
-                      <MapPin className="h-5 w-5 text-primary" />
-                      Entries
-                  </CardTitle>
-                  <CardContent className="space-y-4">
-                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 sm:gap-6">
-                          <Link
-                            href={`/dashboard/trips-overview/${tripId}/location/${location.id}/entry/add-entry`}
-                          >
-                              <div className="relative aspect-video rounded-2xl bg-primary shadow-[0_10px_25px_rgba(0,0,0,0.15)] ring-1 ring-black/5 flex items-center justify-center transition-transform duration-200 group-hover:scale-[1.02]">
-                                  <div className="flex flex-col items-center gap-3 text-gray-900">
-                                      <div className="h-10 w-10 rounded-full bg-pink-500 text-white grid place-items-center shadow">
-                                          <Plus className="h-5 w-5" />
-                                      </div>
-                                      <span className="text-sm font-medium">
-                                          Add Location
-                                        </span>
-                                  </div>
-                              </div>
-                          </Link>
+        <Card className="shadow-lg">
+          <CardHeader>
+            <CardTitle className="text-xl sm:text-2xl flex items-center gap-2">
+              <MapPin className="h-5 w-5 text-primary" />
+              Entries
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 sm:gap-6">
+              <Link
+                href={`/dashboard/trips-overview/${tripId}/location/${location.id}/entry/add-entry`}
+              >
+                <div className="relative aspect-video rounded-2xl bg-primary shadow-[0_10px_25px_rgba(0,0,0,0.15)] ring-1 ring-black/5 flex items-center justify-center transition-transform duration-200 group-hover:scale-[1.02]">
+                  <div className="flex flex-col items-center gap-3 text-gray-900">
+                    <div className="h-10 w-10 rounded-full bg-pink-500 text-white grid place-items-center shadow">
+                      <Plus className="h-5 w-5" />
+                    </div>
+                    <span className="text-sm font-medium">
+                      Add Entry
+                    </span>
+                  </div>
+                </div>
+              </Link>
+
+              {/* Existing entries */}
+              {entriesLoading ? (
+                <div className="col-span-2 sm:col-span-2">
+                  <Spinner label="Loading entries..." />
+                </div>
+              ) : (
+                entries.map((en) => (
+                  <Link
+                    key={en.id}
+                    href={`/dashboard/trips-overview/${tripId}/location/${location.id}/entry/${en.id}`}
+                  >
+                    <div className="rounded-2xl bg-white/60 border shadow-sm hover:shadow-md transition cursor-pointer group">
+                      {en.images && en.images.length > 0 ? (
+                        <Image
+                          src={
+                            getAssetUrl(en.images[0].url) ||
+                            en.images[0].url
+                          }
+                          alt={en.title}
+                          width={800}
+                          height={500}
+                          unoptimized
+                          className="object-cover w-full h-28 rounded-t-2xl"
+                        />
+                      ) : (
+                        <div className="w-full h-28 bg-muted rounded-t-2xl flex items-center justify-center text-sm text-muted-foreground">
+                          No image
+                        </div>
+                      )}
+                      <div className="p-3">
+                        <div
+                          className="font-medium truncate"
+                          title={en.title}
+                        >
+                          {en.title}
+                        </div>
+                        <div className="text-xs text-muted-foreground mt-1">
+                          {new Date(en.date).toLocaleDateString()}
+                        </div>
                       </div>
-                  </CardContent>
-              </CardHeader>
-          </Card>
+                    </div>
+                  </Link>
+                ))
+              )}
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Map Section */}
         {hasValidCoordinates && (

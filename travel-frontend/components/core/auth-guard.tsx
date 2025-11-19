@@ -8,6 +8,7 @@ import { useDispatch } from 'react-redux';
 import { setToken, clearToken, setUser } from '@/lib/redux/authSlice';
 import { triggerExpiry } from '@/lib/redux/sessionSlice';
 import { useEffect, useState, useRef } from 'react';
+import { Spinner } from '@/components/ui/spinner';
 
 interface User {
   id: string;
@@ -155,7 +156,7 @@ export default function AuthGuard({
   }, [token, user, dispatch]);
 
   if (isChecking) {
-    return <div>Loading...</div>; // Or a spinner component
+    return <Spinner fullScreen label="Loading..." />;
   }
 
   return <>{children}</>;

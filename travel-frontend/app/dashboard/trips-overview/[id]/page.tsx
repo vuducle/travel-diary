@@ -12,6 +12,8 @@ import UpdateTripModal from '@/components/trip/update-trip-modal';
 import DeleteTripModal from '@/components/trip/delete-trip-modal';
 import { useMemo } from 'react';
 import { useParams } from 'next/navigation';
+import { Spinner } from '@/components/ui/spinner';
+import type { Trip as StoreTrip } from '@/lib/redux/tripsSlice';
 
 interface Location {
   id: string;
@@ -26,20 +28,21 @@ interface Location {
   updatedAt: string;
 }
 
-interface Trip {
-  id: string;
-  title: string;
-  description: string;
+// Use the shared Trip type from the store to align with modals
+type ApiTrip = {
+  id: string | number;
+  title?: string;
+  description?: string | null;
   startDate: string;
   endDate: string;
-  coverImage?: string;
-  visibility: 'PUBLIC' | 'PRIVATE' | 'FRIENDS';
-}
+  coverImage?: string | null;
+  visibility?: StoreTrip['visibility'];
+};
 
 // NOTE: Dynamic metadata can be added via a server component wrapper; since this is client, we cannot export generateMetadata here.
 export default function TripLocationsPage() {
   const [locations, setLocations] = useState<Location[]>([]);
-  const [trip, setTrip] = useState<Trip | null>(null);
+  const [trip, setTrip] = useState<StoreTrip | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const params = useParams();
@@ -61,7 +64,18 @@ export default function TripLocationsPage() {
         ]);
         // console.log('Trip response:', tripResponse.data);
         setLocations(locationsResponse.data.items);
-        setTrip(tripResponse.data);
+        // Normalize API trip to StoreTrip shape
+        const t = tripResponse.data as ApiTrip;
+        const normalized: StoreTrip = {
+          id: String(t.id),
+          title: t.title ?? '',
+          description: t.description ?? null,
+          startDate: t.startDate,
+          endDate: t.endDate,
+          coverImage: t.coverImage ?? null,
+          visibility: (t.visibility as StoreTrip['visibility']) ?? 'PRIVATE',
+        };
+        setTrip(normalized);
         setError(null);
       } catch (err) {
         setError('Failed to fetch trip data.');
@@ -147,7 +161,7 @@ export default function TripLocationsPage() {
 
           {loading && (
             <div className="col-span-full text-center py-8 text-gray-600">
-              Loading locations…
+              <Spinner label="Loading locations..." />
             </div>
           )}
           {error && (

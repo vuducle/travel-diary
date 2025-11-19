@@ -24,6 +24,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import api from '@/lib/api/client';
 import dynamic from 'next/dynamic';
+import { Spinner } from '@/components/ui/spinner';
 
 // Dynamically import LocationMap to avoid SSR issues with Leaflet
 const LocationMap = dynamic(
@@ -32,7 +33,7 @@ const LocationMap = dynamic(
     ssr: false,
     loading: () => (
       <div className="h-[300px] w-full rounded-lg border border-border flex items-center justify-center bg-muted">
-        <p className="text-muted-foreground">Loading map...</p>
+        <Spinner label="Loading map..." />
       </div>
     ),
   }
