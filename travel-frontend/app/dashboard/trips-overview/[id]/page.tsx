@@ -45,6 +45,12 @@ export default function TripLocationsPage() {
   const [trip, setTrip] = useState<StoreTrip | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [locationsCount, setLocationsCount] = useState<number | null>(
+    null
+  );
+  const [entriesCount, setEntriesCount] = useState<number | null>(
+    null
+  );
   const params = useParams();
   const tripId = useMemo(() => {
     const raw = (
@@ -58,12 +64,17 @@ export default function TripLocationsPage() {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const [locationsResponse, tripResponse] = await Promise.all([
-          api.get(`/locations?tripId=${tripId}`),
-          api.get(`/trips/${tripId}`),
-        ]);
+        const [locationsResponse, tripResponse, entriesResponse] =
+          await Promise.all([
+            api.get(`/locations?tripId=${tripId}`),
+            api.get(`/trips/${tripId}`),
+            // fetch a single entry page to obtain total count for the trip
+            api.get(`/entries?tripId=${tripId}&page=1&limit=1`),
+          ]);
         // console.log('Trip response:', tripResponse.data);
         setLocations(locationsResponse.data.items);
+        setLocationsCount(locationsResponse.data.total ?? null);
+        setEntriesCount(entriesResponse.data.total ?? null);
         // Normalize API trip to StoreTrip shape
         const t = tripResponse.data as ApiTrip;
         const normalized: StoreTrip = {
@@ -108,39 +119,61 @@ export default function TripLocationsPage() {
         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
           <h1 className="text-3xl md:text-4xl font-semibold mb-4 md:mb-0">
             {trip ? trip.title : 'Trip Locations'}
-          </h1>
-          <div className="flex items-center gap-2">
-            {tripId && (
-              <Button
-                asChild
-                variant="outline"
-                size="sm"
-                className="shrink-0 md:inline-flex"
-              >
-                <Link href={`/dashboard/trips-overview/`}>
-                  <ArrowLeft className="h-4 w-4 md:mr-1" />
-                  <span className="hidden md:inline">
-                    Back to Overview
-                  </span>
-                </Link>
-              </Button>
-            )}
-            {/* Btn */}
-            <div className="ml-auto flex items-center gap-2">
-              {trip && <UpdateTripModal trip={trip} />}
-              {trip && <DeleteTripModal trip={trip} />}
-              <Button asChild className="inline-flex">
-                <Link
-                  href={`/dashboard/trips-overview/${tripId}/add-location`}
-                >
-                  <Plus className="h-4 w-4 md:mr-1" />
-                  <span className="hidden md:inline">
-                    Add New Location
-                  </span>
-                </Link>
-              </Button>
+            <div className="mt-2 text-sm text-gray-600 flex items-center gap-1 mb-2">
+              {locationsCount !== null ? (
+                <span>
+                  {locationsCount} Location
+                  {locationsCount === 1 ? '' : 's'}
+                </span>
+              ) : (
+                <span>
+                  {locations.length} Location
+                  {locations.length === 1 ? '' : 's'}
+                </span>
+              )}{' '}
+              <span className="mx-2">•</span>
+              {entriesCount !== null ? (
+                <span>
+                  {entriesCount} Entr
+                  {entriesCount === 1 ? 'y' : 'ies'}
+                </span>
+              ) : (
+                <span>{'— Entries'}</span>
+              )}
             </div>
-          </div>
+            <div className="flex items-center justify-center gap-2">
+              {tripId && (
+                <Button
+                  asChild
+                  variant="outline"
+                  size="sm"
+                  className="shrink-0 md:inline-flex"
+                >
+                  <Link href={`/dashboard/trips-overview/`}>
+                    <ArrowLeft className="h-4 w-4 md:mr-1" />
+                    <span className="hidden md:inline">
+                      Back to Overview
+                    </span>
+                  </Link>
+                </Button>
+              )}
+              {/* Btn */}
+              <div className="ml-auto flex items-center gap-2">
+                {trip && <UpdateTripModal trip={trip} />}
+                {trip && <DeleteTripModal trip={trip} />}
+                <Button asChild className="inline-flex">
+                  <Link
+                    href={`/dashboard/trips-overview/${tripId}/add-location`}
+                  >
+                    <Plus className="h-4 w-4 md:mr-1" />
+                    <span className="hidden md:inline">
+                      Add New Location
+                    </span>
+                  </Link>
+                </Button>
+              </div>
+            </div>
+          </h1>
         </div>
 
         <div className="grid gap-6 sm:gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
