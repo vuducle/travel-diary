@@ -16,15 +16,15 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import {
-  ArrowLeft,
-  MapPin,
-  Globe,
-  Navigation,
-  MapPinned,
-  FileText,
-  Folders,
-  Pencil,
-  Trash,
+    ArrowLeft,
+    MapPin,
+    Globe,
+    Navigation,
+    MapPinned,
+    FileText,
+    Folders,
+    Pencil,
+    Trash, Plus,
 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -359,10 +359,21 @@ export default function LocationDetailPage() {
                       Entries
                   </CardTitle>
                   <CardContent className="space-y-4">
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                          {/*
-                          * TODO: here comes a grid to create entries
-                          */}
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 sm:gap-6">
+                          <Link
+                            href={`/dashboard/trips-overview/${tripId}/location/${location.id}/entry/add-entry`}
+                          >
+                              <div className="relative aspect-video rounded-2xl bg-primary shadow-[0_10px_25px_rgba(0,0,0,0.15)] ring-1 ring-black/5 flex items-center justify-center transition-transform duration-200 group-hover:scale-[1.02]">
+                                  <div className="flex flex-col items-center gap-3 text-gray-900">
+                                      <div className="h-10 w-10 rounded-full bg-pink-500 text-white grid place-items-center shadow">
+                                          <Plus className="h-5 w-5" />
+                                      </div>
+                                      <span className="text-sm font-medium">
+                                          Add Location
+                                        </span>
+                                  </div>
+                              </div>
+                          </Link>
                       </div>
                   </CardContent>
               </CardHeader>
