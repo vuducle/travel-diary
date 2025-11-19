@@ -214,9 +214,14 @@ export default function AddLocationPage() {
 
     try {
       // Let axios set the correct multipart boundary header automatically
-      await api.post('/locations', formData);
-      showToast('Location added successfully!', 'success');
-      router.push(`/dashboard/trips-overview/${tripId}`);
+      const resp = await api.post('/locations', formData);
+      const newId = resp?.data?.id;
+      const qs = newId
+        ? `?locationCreated=1&locationId=${encodeURIComponent(
+            String(newId)
+          )}`
+        : '?locationCreated=1';
+      router.push(`/dashboard/trips-overview/${tripId}${qs}`);
     } catch {
       showToast('Failed to add location. Please try again.', 'error');
       setIsSubmitting(false);

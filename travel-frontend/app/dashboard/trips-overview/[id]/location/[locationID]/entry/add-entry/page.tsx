@@ -121,17 +121,23 @@ export default function AddEntryPage() {
 
       for (const p of previews) fd.append('images', p.file);
 
-      await api.post('/entries', fd, {
+      const resp = await api.post('/entries', fd, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
 
-      showToastRef.current('Entry created', 'success');
+      const newId = resp?.data?.id;
+      const qs = newId
+        ? `?entryCreated=1&entryId=${encodeURIComponent(
+            String(newId)
+          )}`
+        : '?entryCreated=1';
+
       if (locationId) {
         router.push(
-          `/dashboard/trips-overview/${tripId}/location/${locationId}`
+          `/dashboard/trips-overview/${tripId}/location/${locationId}${qs}`
         );
       } else {
-        router.push(`/dashboard/trips-overview/${tripId}`);
+        router.push(`/dashboard/trips-overview/${tripId}${qs}`);
       }
     } catch (err: unknown) {
       type ErrLike = {

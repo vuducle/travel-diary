@@ -18,6 +18,7 @@ interface Trip {
   endDate: string;
   coverImage?: string;
   visibility: 'PUBLIC' | 'PRIVATE' | 'FRIENDS';
+  _count?: { locations?: number; entries?: number };
 }
 
 export default function TripsOverviewPage() {
@@ -172,6 +173,26 @@ export default function TripsOverviewPage() {
                       </div>
                       <div className="text-white/80 text-xs sm:text-[13px]">
                         {dateText}
+                      </div>
+                      <div className="text-white/70 text-xs mt-1">
+                        {typeof trip._count?.locations ===
+                        'number' ? (
+                          <span>
+                            {trip._count.locations} location
+                            {trip._count.locations === 1 ? '' : 's'}
+                          </span>
+                        ) : (
+                          <span>— locations</span>
+                        )}{' '}
+                        <span className="mx-2">•</span>
+                        {typeof trip._count?.entries === 'number' ? (
+                          <span>
+                            {trip._count.entries} entr
+                            {trip._count.entries === 1 ? 'y' : 'ies'}
+                          </span>
+                        ) : (
+                          <span>— entries</span>
+                        )}
                       </div>
                     </div>
                   </div>

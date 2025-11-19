@@ -10,8 +10,13 @@ import { ArrowLeft } from 'lucide-react';
 import { Plus } from 'lucide-react';
 import UpdateTripModal from '@/components/trip/update-trip-modal';
 import DeleteTripModal from '@/components/trip/delete-trip-modal';
-import { useMemo } from 'react';
-import { useParams } from 'next/navigation';
+import { useMemo, useRef } from 'react';
+import {
+  useParams,
+  useSearchParams,
+  useRouter,
+} from 'next/navigation';
+import { useToast } from '@/hooks/use-toast';
 import { Spinner } from '@/components/ui/spinner';
 import type { Trip as StoreTrip } from '@/lib/redux/tripsSlice';
 
@@ -52,6 +57,10 @@ export default function TripLocationsPage() {
     null
   );
   const params = useParams();
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const { showToast } = useToast();
+  const handledParamsRef = useRef<Set<string>>(new Set());
   const tripId = useMemo(() => {
     const raw = (
       params as Record<string, string | string[] | undefined>
@@ -99,6 +108,83 @@ export default function TripLocationsPage() {
 
     fetchData();
   }, [tripId]);
+
+  // Handle optimistic count updates signaled via query params
+  useEffect(() => {
+    if (!tripId) return;
+    const sp = searchParams;
+    if (!sp) return;
+    let didChange = false;
+
+    const locCreated = sp.get('locationCreated');
+    const locId = sp.get('locationId');
+    const locDeleted = sp.get('locationDeleted');
+    const entryCreated = sp.get('entryCreated');
+    const entryDeleted = sp.get('entryDeleted');
+    const entryId = sp.get('entryId');
+
+    if (locCreated === '1') {
+      const key = `locationCreated:${locId ?? 'unknown'}`;
+      if (!handledParamsRef.current.has(key)) {
+        handledParamsRef.current.add(key);
+        setLocationsCount((prev) =>
+          prev === null ? locations.length + 1 : prev + 1
+        );
+        showToast('Location added', 'success');
+        didChange = true;
+      }
+    }
+
+    if (locDeleted === '1' && locId) {
+      const key = `locationDeleted:${locId}`;
+      if (!handledParamsRef.current.has(key)) {
+        handledParamsRef.current.add(key);
+        setLocationsCount((prev) =>
+          prev === null
+            ? Math.max(0, locations.length - 1)
+            : Math.max(0, prev - 1)
+        );
+        setLocations((prev) => prev.filter((l) => l.id !== locId));
+        showToast('Location deleted', 'success');
+        didChange = true;
+      }
+    }
+
+    if (entryCreated === '1') {
+      const key = `entryCreated:${entryId ?? 'unknown'}`;
+      if (!handledParamsRef.current.has(key)) {
+        handledParamsRef.current.add(key);
+        setEntriesCount((prev) => (prev === null ? null : prev + 1));
+        showToast('Entry created', 'success');
+        didChange = true;
+      }
+    }
+
+    if (entryDeleted === '1') {
+      const key = `entryDeleted:${entryId ?? 'unknown'}`;
+      if (!handledParamsRef.current.has(key)) {
+        handledParamsRef.current.add(key);
+        setEntriesCount((prev) =>
+          prev === null ? null : Math.max(0, prev - 1)
+        );
+        showToast('Entry deleted', 'success');
+        didChange = true;
+      }
+    }
+
+    if (didChange) {
+      // clear params so we don't handle them again
+      const url = new URL(window.location.href);
+      url.searchParams.delete('locationCreated');
+      url.searchParams.delete('locationId');
+      url.searchParams.delete('locationDeleted');
+      url.searchParams.delete('entryCreated');
+      url.searchParams.delete('entryDeleted');
+      url.searchParams.delete('entryId');
+      router.replace(url.pathname + url.search);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams, tripId, locations.length]);
 
   const formatDate = (dateIso: string) => {
     const date = new Date(dateIso);

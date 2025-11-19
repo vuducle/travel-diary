@@ -37,8 +37,14 @@ export default function DeleteLocationModal({
   const handleDelete = async () => {
     try {
       await api.delete(`/locations/${location.id}`);
-      showToast('Location deleted successfully!', 'success');
-      router.push(`/dashboard/trips-overview/${location.tripId}`);
+      // Redirect with query param to allow parent page to update counts optimistically
+      router.push(
+        `/dashboard/trips-overview/${
+          location.tripId
+        }?locationDeleted=1&locationId=${encodeURIComponent(
+          location.id
+        )}`
+      );
     } catch (error) {
       console.error('Failed to delete location', error);
       showToast('Failed to delete location.', 'error');
@@ -51,11 +57,11 @@ export default function DeleteLocationModal({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>
-            Are you sure you want to delete "{location.name}"?
+            Are you sure you want to delete {location.name}?
           </DialogTitle>
           <DialogDescription>
-            This action cannot be undone. This will permanently delete your
-            location and all of its data.
+            This action cannot be undone. This will permanently delete
+            your location and all of its data.
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
