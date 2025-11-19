@@ -14,9 +14,11 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft } from 'lucide-react';
+import {ArrowLeft, Trash} from 'lucide-react';
 import { getAssetUrl } from '@/lib/utils/image-utils';
 import { Spinner } from '@/components/ui/spinner';
+
+import DeleteEntryModal from "@/components/entry/delete-entry-modal";
 
 type EntryImage = { id: string; url: string; order: number };
 type Entry = {
@@ -53,7 +55,10 @@ export default function EntryDetailPage() {
     null
   );
 
-  useEffect(() => {
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+
+
+    useEffect(() => {
     if (!entryId) return;
     let canceled = false;
     (async () => {
@@ -98,8 +103,8 @@ export default function EntryDetailPage() {
   return (
     <div className="relative min-h-screen ">
       <div className="relative container mx-auto p-4 max-w-3xl bg-linear-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-950">
-        {tripId && locationId && (
-          <div className="mb-4">
+        {(tripId && locationId) && (
+          <div className="mb-4 flex items-center justify-between gap-3">
             <Button
               asChild
               variant="secondary"
@@ -112,8 +117,18 @@ export default function EntryDetailPage() {
                 <ArrowLeft className="h-4 w-4 mr-1" /> Back
               </Link>
             </Button>
+
+            <Button
+              variant="destructive"
+              size="sm"
+              className="backdrop-blur-md bg-red-600/90 hover:bg-red-600/80 shadow-lg"
+              onClick={() => setIsDeleteModalOpen(true)}
+            >
+              <Trash className="h-4 w-4 mr-2" /> Delete Entry
+            </Button>
           </div>
         )}
+         
 
         <Card className="rounded-2xl backdrop-blur-xl bg-white/10 dark:bg-white/5 border border-white/20 dark:border-white/10 shadow-2xl">
           <CardHeader className="pb-2">
@@ -164,6 +179,17 @@ export default function EntryDetailPage() {
             )}
           </CardContent>
         </Card>
+
+        <DeleteEntryModal
+          open={isDeleteModalOpen}
+          onClose={() => setIsDeleteModalOpen(false)}
+          entry={{
+            id: String(entry.id),
+            name: entry.title,
+            tripId: tripId as string,
+            locationId: locationId as string,
+          }}
+        />
       </div>
     </div>
   );
