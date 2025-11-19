@@ -237,7 +237,9 @@ export default function DashboardPage() {
                 <div className="flex items-center gap-4 text-sm text-gray-600">
                   <div className="flex items-center gap-1">
                     <MapPin className="h-4 w-4" />
-                    <span>{trip._count?.locations || 0} Locations</span>
+                    <span>
+                      {trip._count?.locations || 0} Locations
+                    </span>
                   </div>
                   <div className="flex items-center gap-1">
                     <FileText className="h-4 w-4" />
@@ -265,7 +267,9 @@ export default function DashboardPage() {
                 <h2 className="text-2xl font-bold text-gray-900 mb-2">
                   {trip.title}
                 </h2>
-                <p className="text-sm text-gray-500 mb-3">{dateText}</p>
+                <p className="text-sm text-gray-500 mb-3">
+                  {dateText}
+                </p>
                 <p className="text-gray-700 text-sm leading-relaxed mb-4 line-clamp-3">
                   {trip.description}
                 </p>
