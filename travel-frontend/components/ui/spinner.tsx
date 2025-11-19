@@ -1,32 +1,44 @@
-"use client";
+'use client';
 
-import React from "react";
-import clsx from "clsx";
+import React from 'react';
+import clsx from 'clsx';
 
 type SpinnerProps = {
-  size?: "sm" | "md" | "lg" | number;
+  size?: 'sm' | 'md' | 'lg' | number;
   fullScreen?: boolean;
   label?: string;
   className?: string;
 };
 
-function sizeToPx(size: SpinnerProps["size"]) {
-  if (typeof size === "number") return size;
+function sizeToPx(size: SpinnerProps['size']) {
+  if (typeof size === 'number') return size;
   switch (size) {
-    case "sm":
+    case 'sm':
       return 20;
-    case "lg":
+    case 'lg':
       return 48;
-    case "md":
+    case 'md':
     default:
       return 32;
   }
 }
 
-export function Spinner({ size = "md", fullScreen = false, label = "Loading", className }: SpinnerProps) {
+export function Spinner({
+  size = 'md',
+  fullScreen = false,
+  label = 'Loading',
+  className,
+}: SpinnerProps) {
   const px = sizeToPx(size);
   const spinner = (
-    <div role="status" aria-label={label} className={clsx("inline-flex items-center justify-center", className)}>
+    <div
+      role="status"
+      aria-label={label}
+      className={clsx(
+        'inline-flex items-center justify-center',
+        className
+      )}
+    >
       <svg
         className="animate-spin text-primary"
         width={px}
@@ -35,8 +47,19 @@ export function Spinner({ size = "md", fullScreen = false, label = "Loading", cl
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
       >
-        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+        <circle
+          className="opacity-25"
+          cx="12"
+          cy="12"
+          r="10"
+          stroke="currentColor"
+          strokeWidth="4"
+        />
+        <path
+          className="opacity-75"
+          fill="currentColor"
+          d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+        />
       </svg>
       <span className="sr-only">{label}</span>
     </div>
@@ -50,7 +73,11 @@ export function Spinner({ size = "md", fullScreen = false, label = "Loading", cl
     );
   }
 
-  return <div className="w-full flex items-center justify-center py-8">{spinner}</div>;
+  return (
+    <div className="w-full flex items-center justify-center py-8">
+      {spinner}
+    </div>
+  );
 }
 
 export default Spinner;

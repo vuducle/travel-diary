@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { useParams } from 'next/navigation';
 import api from '@/lib/api/client';
 import Lightbox from 'yet-another-react-lightbox';
@@ -14,11 +15,12 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import {ArrowLeft, Trash} from 'lucide-react';
+import { ArrowLeft, Trash } from 'lucide-react';
 import { getAssetUrl } from '@/lib/utils/image-utils';
 import { Spinner } from '@/components/ui/spinner';
 
-import DeleteEntryModal from "@/components/entry/delete-entry-modal";
+import DeleteEntryModal from '@/components/entry/delete-entry-modal';
+import UpdateEntryModal from '@/components/entry/update-entry-modal';
 
 type EntryImage = { id: string; url: string; order: number };
 type Entry = {
@@ -55,44 +57,51 @@ export default function EntryDetailPage() {
     null
   );
 
-    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isEntrySubmitting, setIsEntrySubmitting] = useState(false);
+  const router = useRouter();
 
-
-    useEffect(() => {
+  const fetchEntry = useCallback(async () => {
     if (!entryId) return;
+    setLoading(true);
+    try {
+      const idNum = parseInt(entryId, 10);
+      const resp = await api.get(`/entries/${idNum}`);
+      setEntry(resp.data as Entry);
+      setError(null);
+    } catch (err: unknown) {
+      const getMessage = (e: unknown) => {
+        if (!e) return 'Failed to load entry';
+        if (typeof e === 'object' && e !== null) {
+          const o = e as {
+            response?: { data?: { message?: string } };
+            message?: string;
+          };
+          return (
+            o.response?.data?.message ||
+            o.message ||
+            'Failed to load entry'
+          );
+        }
+        return String(e);
+      };
+      setError(getMessage(err));
+    } finally {
+      setLoading(false);
+    }
+  }, [entryId]);
+
+  useEffect(() => {
     let canceled = false;
     (async () => {
-      setLoading(true);
-      try {
-        const idNum = parseInt(entryId, 10);
-        const resp = await api.get(`/entries/${idNum}`);
-        if (canceled) return;
-        setEntry(resp.data as Entry);
-      } catch (err: unknown) {
-        const getMessage = (e: unknown) => {
-          if (!e) return 'Failed to load entry';
-          if (typeof e === 'object' && e !== null) {
-            const o = e as {
-              response?: { data?: { message?: string } };
-              message?: string;
-            };
-            return (
-              o.response?.data?.message ||
-              o.message ||
-              'Failed to load entry'
-            );
-          }
-          return String(e);
-        };
-        setError(getMessage(err));
-      } finally {
-        if (!canceled) setLoading(false);
-      }
+      if (canceled) return;
+      await fetchEntry();
     })();
     return () => {
       canceled = true;
     };
-  }, [entryId]);
+  }, [fetchEntry]);
 
   if (loading) return <Spinner fullScreen label="Loading entry..." />;
   if (error) return <div className="p-4 text-red-600">{error}</div>;
@@ -103,7 +112,7 @@ export default function EntryDetailPage() {
   return (
     <div className="relative min-h-screen ">
       <div className="relative container mx-auto p-4 max-w-3xl bg-linear-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-950">
-        {(tripId && locationId) && (
+        {tripId && locationId && (
           <div className="mb-4 flex items-center justify-between gap-3">
             <Button
               asChild
@@ -118,17 +127,29 @@ export default function EntryDetailPage() {
               </Link>
             </Button>
 
-            <Button
-              variant="destructive"
-              size="sm"
-              className="backdrop-blur-md bg-red-600/90 hover:bg-red-600/80 shadow-lg"
-              onClick={() => setIsDeleteModalOpen(true)}
-            >
-              <Trash className="h-4 w-4 mr-2" /> Delete Entry
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="backdrop-blur-md bg-white/5 hover:bg-white/10 shadow-sm"
+                onClick={() => setIsEditModalOpen(true)}
+                disabled={isEntrySubmitting}
+              >
+                Edit
+              </Button>
+
+              <Button
+                variant="destructive"
+                size="sm"
+                className="backdrop-blur-md bg-red-600/90 hover:bg-red-600/80 shadow-lg"
+                onClick={() => setIsDeleteModalOpen(true)}
+                disabled={isEntrySubmitting}
+              >
+                <Trash className="h-4 w-4 mr-2" /> Delete Entry
+              </Button>
+            </div>
           </div>
         )}
-         
 
         <Card className="rounded-2xl backdrop-blur-xl bg-white/10 dark:bg-white/5 border border-white/20 dark:border-white/10 shadow-2xl">
           <CardHeader className="pb-2">
@@ -189,6 +210,35 @@ export default function EntryDetailPage() {
             tripId: tripId as string,
             locationId: locationId as string,
           }}
+          onSubmittingChange={setIsEntrySubmitting}
+        />
+
+        <UpdateEntryModal
+          open={isEditModalOpen}
+          onClose={() => setIsEditModalOpen(false)}
+          entry={{
+            id: entry.id,
+            title: entry.title,
+            content: entry.content ?? null,
+            date: entry.date ?? null,
+            images: images.map((i) => ({
+              id: i.id,
+              url: i.url,
+              order: i.order,
+            })),
+          }}
+          onSuccess={() => {
+            // After successful update, redirect back to location and show toast there
+            setIsEditModalOpen(false);
+            if (tripId && locationId) {
+              router.push(
+                `/dashboard/trips-overview/${tripId}/location/${locationId}?entryUpdated=1&entryId=${entry.id}`
+              );
+            } else {
+              fetchEntry();
+            }
+          }}
+          onSubmittingChange={setIsEntrySubmitting}
         />
       </div>
     </div>

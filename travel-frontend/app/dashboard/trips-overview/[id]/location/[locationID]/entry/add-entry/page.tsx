@@ -151,7 +151,9 @@ export default function AddEntryPage() {
 
   return (
     <div className="relative container mx-auto p-4 max-w-3xl">
-      {isSubmitting && <Spinner fullScreen label="Creating entry..." />}
+      {isSubmitting && (
+        <Spinner fullScreen label="Creating entry..." />
+      )}
       <Card>
         <CardHeader>
           <CardTitle>Add New Entry</CardTitle>

@@ -7,6 +7,7 @@ import {
   useRef,
   useState,
 } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import {
@@ -72,6 +73,13 @@ interface Location {
   };
 }
 
+type EntrySummary = {
+  id: string | number;
+  title: string;
+  date: string;
+  images?: { id?: string; url: string }[];
+};
+
 export default function LocationDetailPage() {
   const params = useParams();
   const { showToast } = useToast();
@@ -96,18 +104,15 @@ export default function LocationDetailPage() {
   }, [params]);
 
   const [location, setLocation] = useState<Location | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  type EntrySummary = {
-    id: number | string;
-    title: string;
-    date: string;
-    images?: { id?: string; url: string }[];
-  };
   const [entries, setEntries] = useState<EntrySummary[]>([]);
   const [entriesLoading, setEntriesLoading] = useState(false);
+  const [removingEntryIds, setRemovingEntryIds] = useState<
+    Set<string>
+  >(new Set());
 
   const fetchLocation = useCallback(async () => {
     if (!locationId) return;
@@ -134,29 +139,89 @@ export default function LocationDetailPage() {
   }, [fetchLocation]);
 
   // fetch entries for this location
+  const fetchEntries = useCallback(async () => {
+    if (!location?.id) return;
+    try {
+      setEntriesLoading(true);
+      const resp = await api.get('/entries', {
+        params: { locationId: location.id, tripId },
+      });
+      const items = resp.data.items || resp.data || [];
+      // Deduplicate by id to avoid duplicate tiles if fetch runs multiple times
+      const map: Record<string, unknown> = {};
+      for (const it of items) {
+        map[String(it.id)] = it;
+      }
+      const unique = Object.values(map) as typeof items;
+      setEntries(unique);
+    } catch (e) {
+      // ignore; entries are optional
+      console.error('Failed to load entries', e);
+    } finally {
+      setEntriesLoading(false);
+    }
+  }, [location?.id, tripId]);
+
   useEffect(() => {
     let cancelled = false;
-    const fetchEntries = async () => {
-      if (!location?.id) return;
-      try {
-        setEntriesLoading(true);
-        const resp = await api.get('/entries', {
-          params: { locationId: location.id, tripId },
-        });
-        if (cancelled) return;
-        setEntries(resp.data.items || resp.data || []);
-      } catch (e) {
-        // ignore; entries are optional
-        console.error('Failed to load entries', e);
-      } finally {
-        if (!cancelled) setEntriesLoading(false);
-      }
-    };
-    fetchEntries();
+    (async () => {
+      if (cancelled) return;
+      await fetchEntries();
+    })();
     return () => {
       cancelled = true;
     };
-  }, [location?.id, tripId]);
+  }, [fetchEntries]);
+
+  // Handle redirect query params from entry actions (delete/update)
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const handledParamsRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!searchParams) return;
+    const deleted = searchParams.get('entryDeleted');
+    const updated = searchParams.get('entryUpdated');
+    const entryId = searchParams.get('entryId');
+
+    // Create a unique key for this set of params
+    const paramKey = `${deleted}-${updated}-${entryId}`;
+
+    // If we've already handled these exact params, skip
+    if (handledParamsRef.current === paramKey) return;
+
+    if (deleted && entryId) {
+      handledParamsRef.current = paramKey;
+      // remove param immediately to prevent re-running this effect
+      router.replace(
+        `/dashboard/trips-overview/${tripId}/location/${locationId}`
+      );
+      showToastRef.current('Entry deleted', 'success');
+      // Optimistically fade-out the deleted entry then remove it from state
+      const idStr = String(entryId);
+      setRemovingEntryIds((s) => new Set(s).add(idStr));
+      // Wait for animation (300ms) then remove from entries and clearing removing set
+      setTimeout(() => {
+        setEntries((prev) =>
+          prev.filter((e) => String(e.id) !== idStr)
+        );
+        setRemovingEntryIds((s) => {
+          const next = new Set(s);
+          next.delete(idStr);
+          return next;
+        });
+      }, 320);
+    } else if (updated && entryId) {
+      handledParamsRef.current = paramKey;
+      // remove param immediately to prevent re-running this effect
+      router.replace(
+        `/dashboard/trips-overview/${tripId}/location/${locationId}`
+      );
+      showToastRef.current('Entry updated', 'success');
+      // refresh entries to reflect updates
+      fetchEntries();
+    }
+  }, [searchParams, router, tripId, locationId, fetchEntries]);
 
   if (loading) {
     return <Spinner fullScreen label="Loading location..." />;
@@ -406,43 +471,54 @@ export default function LocationDetailPage() {
                   <Spinner label="Loading entries..." />
                 </div>
               ) : (
-                entries.map((en) => (
-                  <Link
-                    key={en.id}
-                    href={`/dashboard/trips-overview/${tripId}/location/${location.id}/entry/${en.id}`}
-                  >
-                    <div className="rounded-2xl bg-white/60 border shadow-sm hover:shadow-md transition cursor-pointer group">
-                      {en.images && en.images.length > 0 ? (
-                        <Image
-                          src={
-                            getAssetUrl(en.images[0].url) ||
-                            en.images[0].url
-                          }
-                          alt={en.title}
-                          width={800}
-                          height={500}
-                          unoptimized
-                          className="object-cover w-full h-28 rounded-t-2xl"
-                        />
-                      ) : (
-                        <div className="w-full h-28 bg-muted rounded-t-2xl flex items-center justify-center text-sm text-muted-foreground">
-                          No image
-                        </div>
-                      )}
-                      <div className="p-3">
-                        <div
-                          className="font-medium truncate"
-                          title={en.title}
-                        >
-                          {en.title}
-                        </div>
-                        <div className="text-xs text-muted-foreground mt-1">
-                          {new Date(en.date).toLocaleDateString()}
+                entries.map((en) => {
+                  const isRemoving = removingEntryIds.has(
+                    String(en.id)
+                  );
+                  return (
+                    <Link
+                      key={en.id}
+                      href={`/dashboard/trips-overview/${tripId}/location/${location.id}/entry/${en.id}`}
+                    >
+                      <div
+                        className={`rounded-2xl bg-white/60 border shadow-sm hover:shadow-md transition-all duration-300 cursor-pointer group ${
+                          isRemoving
+                            ? 'opacity-0 scale-95 pointer-events-none'
+                            : 'opacity-100'
+                        }`}
+                      >
+                        {en.images && en.images.length > 0 ? (
+                          <Image
+                            src={
+                              getAssetUrl(en.images[0].url) ||
+                              en.images[0].url
+                            }
+                            alt={en.title}
+                            width={800}
+                            height={500}
+                            unoptimized
+                            className="object-cover w-full h-28 rounded-t-2xl"
+                          />
+                        ) : (
+                          <div className="w-full h-28 bg-muted rounded-t-2xl flex items-center justify-center text-sm text-muted-foreground">
+                            No image
+                          </div>
+                        )}
+                        <div className="p-3">
+                          <div
+                            className="font-medium truncate"
+                            title={en.title}
+                          >
+                            {en.title}
+                          </div>
+                          <div className="text-xs text-muted-foreground mt-1">
+                            {new Date(en.date).toLocaleDateString()}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </Link>
-                ))
+                    </Link>
+                  );
+                })
               )}
             </div>
           </CardContent>

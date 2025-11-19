@@ -73,7 +73,8 @@ export default function TripLocationsPage() {
           startDate: t.startDate,
           endDate: t.endDate,
           coverImage: t.coverImage ?? null,
-          visibility: (t.visibility as StoreTrip['visibility']) ?? 'PRIVATE',
+          visibility:
+            (t.visibility as StoreTrip['visibility']) ?? 'PRIVATE',
         };
         setTrip(normalized);
         setError(null);
