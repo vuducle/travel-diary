@@ -80,6 +80,7 @@ export class TripsService {
     const skip = (page - 1) * limit;
     const [items, total] = await Promise.all([
       this.prisma.trip.findMany({
+        where: { visibility: 'PUBLIC' },
         skip,
         take: limit,
         orderBy: { createdAt: 'desc' },
@@ -90,7 +91,7 @@ export class TripsService {
           _count: { select: { locations: true, entries: true } },
         },
       }),
-      this.prisma.trip.count(),
+      this.prisma.trip.count({ where: { visibility: 'PUBLIC' } }),
     ]);
 
     const totalPages = Math.ceil(total / limit) || 1;

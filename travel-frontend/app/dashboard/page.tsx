@@ -1,14 +1,66 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { useSelector } from 'react-redux';
 import { useRouter } from 'next/navigation';
 import { RootState } from '@/lib/redux/store';
-import { MapPin } from 'lucide-react';
+import {
+  MapPin,
+  FileText,
+  Heart,
+  MessageCircle,
+  Share2,
+} from 'lucide-react';
+import api from '@/lib/api/client';
+import Image from 'next/image';
+import { getAssetUrl } from '@/lib/utils/image-utils';
+import { Spinner } from '@/components/ui/spinner';
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from '@/components/ui/avatar';
+import Link from 'next/link';
+
+interface User {
+  id: string;
+  name: string;
+  username: string;
+  avatarUrl?: string;
+}
+
+interface Trip {
+  id: string;
+  title: string;
+  description: string;
+  startDate: string;
+  endDate: string;
+  coverImage?: string;
+  visibility: 'PUBLIC';
+  user: User;
+  _count?: { locations?: number; entries?: number };
+}
+
+interface PaginatedResponse {
+  items: Trip[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+  hasNextPage: boolean;
+}
 
 export default function DashboardPage() {
   const token = useSelector((state: RootState) => state.auth.token);
   const router = useRouter();
+  const [trips, setTrips] = useState<Trip[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const observerTarget = useRef<HTMLDivElement>(null);
+  const limit = 3;
 
   useEffect(() => {
     if (!token) {
@@ -16,173 +68,243 @@ export default function DashboardPage() {
     }
   }, [token, router]);
 
+  const fetchTrips = useCallback(
+    async (pageNum: number, append = false) => {
+      try {
+        if (append) {
+          setLoadingMore(true);
+        } else {
+          setLoading(true);
+        }
+        const response = await api.get(
+          `/trips/all?page=${pageNum}&limit=${limit}`
+        );
+        const data: PaginatedResponse = response.data;
+
+        if (append) {
+          setTrips((prev) => [...prev, ...data.items]);
+        } else {
+          setTrips(data.items);
+        }
+        setHasMore(data.hasNextPage);
+        setError(null);
+      } catch (err) {
+        setError('Failed to fetch trips.');
+        console.error(err);
+      } finally {
+        setLoading(false);
+        setLoadingMore(false);
+      }
+    },
+    []
+  );
+
+  useEffect(() => {
+    if (token) {
+      fetchTrips(1);
+    }
+  }, [token, fetchTrips]);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (
+          entries[0].isIntersecting &&
+          hasMore &&
+          !loadingMore &&
+          !loading
+        ) {
+          setPage((prev) => prev + 1);
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    const currentTarget = observerTarget.current;
+    if (currentTarget) {
+      observer.observe(currentTarget);
+    }
+
+    return () => {
+      if (currentTarget) {
+        observer.unobserve(currentTarget);
+      }
+    };
+  }, [hasMore, loadingMore, loading]);
+
+  useEffect(() => {
+    if (page > 1) {
+      fetchTrips(page, true);
+    }
+  }, [page, fetchTrips]);
+
+  const formatRange = (startIso: string, endIso: string) => {
+    const start = new Date(startIso);
+    const end = new Date(endIso);
+    try {
+      const sameYear = start.getFullYear() === end.getFullYear();
+      if (sameYear) {
+        return `${start.toLocaleDateString(undefined, {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+        })} - ${end.toLocaleDateString(undefined, {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+        })}`;
+      }
+      return `${start.toLocaleDateString(undefined, {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+      })} - ${end.toLocaleDateString(undefined, {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+      })}`;
+    } catch {
+      return `${start.toLocaleDateString()} – ${end.toLocaleDateString()}`;
+    }
+  };
+
+  const getUserInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map((n) => n[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
   if (!token) {
     return null;
   }
 
-  // Dummy trips data - will be replaced with real data later
-  const trips = [
-    {
-      id: 1,
-      title: 'Vietnam 2024',
-      username: 'Momo Trần',
-      subtitle: 'Travel Enthusiast',
-      date: '29.10.2024 - 14.10.2024',
-      description:
-        "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book......",
-      locations: 5,
-      entries: 5,
-      coverImage: null,
-      userAvatar: null,
-    },
-    {
-      id: 2,
-      title: 'Vietnam 2024',
-      username: 'Julia Nguyễn',
-      subtitle: 'Travel Enthusiast',
-      date: '29.10.2024 - 14.10.2024',
-      description:
-        'Lorem Ipsum is simply dummy text of the printing and typesetting industry...',
-      locations: 5,
-      entries: 5,
-      coverImage: null,
-      userAvatar: null,
-    },
-    {
-      id: 3,
-      title: 'Vietnam 2024',
-      username: 'Julia Nguyễn',
-      subtitle: 'Travel Enthusiast',
-      date: '29.10.2024 - 14.10.2024',
-      description:
-        'Lorem Ipsum is simply dummy text of the printing and typesetting industry...',
-      locations: 5,
-      entries: 5,
-      coverImage: null,
-      userAvatar: null,
-    },
-  ];
-
   return (
-    <>
-      {trips.map((trip) => (
-        <div
-          key={trip.id}
-          className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-xl overflow-hidden"
-        >
-          <div className="p-6">
-            <div className="flex items-start justify-between mb-4">
-              <div className="flex items-center gap-3">
-                <div className="h-12 w-12 rounded-full bg-linear-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white font-semibold">
-                  {trip.username.charAt(0).toUpperCase()}
-                </div>
-                <div>
-                  <h3 className="font-semibold text-gray-900">
-                    {trip.username}
-                  </h3>
-                  <p className="text-sm text-gray-600">
-                    {trip.subtitle}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-4 text-sm text-gray-600">
-                <div className="flex items-center gap-1">
-                  <MapPin className="h-4 w-4" />
-                  <span>{trip.locations} Locations</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <svg
-                    className="h-4 w-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+    <div className="max-w-3xl mx-auto p-4 space-y-6">
+      {loading && trips.length === 0 && (
+        <div className="text-center py-12">
+          <Spinner label="Loading trips..." />
+        </div>
+      )}
+
+      {error && (
+        <div className="text-center py-12 text-red-500">{error}</div>
+      )}
+
+      {!loading && !error && trips.length === 0 && (
+        <div className="text-center py-12 text-gray-600">
+          <p>No public trips to show yet.</p>
+          <p className="text-sm mt-2">
+            Check back later for travel inspiration!
+          </p>
+        </div>
+      )}
+
+      {trips.map((trip) => {
+        const cover = getAssetUrl(trip.coverImage);
+        const dateText = formatRange(trip.startDate, trip.endDate);
+
+        return (
+          <div
+            key={trip.id}
+            className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-xl overflow-hidden"
+          >
+            <div className="p-6">
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <Avatar className="h-12 w-12">
+                    <AvatarImage
+                      src={
+                        getAssetUrl(trip.user.avatarUrl) || undefined
+                      }
+                      alt={trip.user.name}
                     />
-                  </svg>
-                  <span>{trip.entries} Entries</span>
+                    <AvatarFallback className="bg-linear-to-br from-blue-400 to-purple-500 text-white font-semibold">
+                      {getUserInitials(trip.user.name)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <h3 className="font-semibold text-gray-900">
+                      {trip.user.name}
+                    </h3>
+                    <p className="text-sm text-gray-600">
+                      @{trip.user.username}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-4 text-sm text-gray-600">
+                  <div className="flex items-center gap-1">
+                    <MapPin className="h-4 w-4" />
+                    <span>{trip._count?.locations || 0} Locations</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <FileText className="h-4 w-4" />
+                    <span>{trip._count?.entries || 0} Entries</span>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            {/* Trip Cover Image */}
-            <div className="relative h-48 bg-linear-to-r from-blue-500 via-purple-500 to-pink-500 rounded-2xl overflow-hidden mb-4">
-              {/* Placeholder for trip cover image */}
-            </div>
-
-            {/* Trip Details */}
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                {trip.title}
-              </h2>
-              <p className="text-sm text-gray-500 mb-3">
-                {trip.date}
-              </p>
-              <p className="text-gray-700 text-sm leading-relaxed mb-4">
-                {trip.description}
-              </p>
-
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <button className="flex items-center gap-2 text-gray-600 hover:text-red-500 transition-colors">
-                    <svg
-                      className="h-5 w-5"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-                      />
-                    </svg>
-                  </button>
-                  <button className="flex items-center gap-2 text-gray-600 hover:text-blue-500 transition-colors">
-                    <svg
-                      className="h-5 w-5"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
-                      />
-                    </svg>
-                  </button>
-                  <button className="flex items-center gap-2 text-gray-600 hover:text-green-500 transition-colors">
-                    <svg
-                      className="h-5 w-5"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"
-                      />
-                    </svg>
-                  </button>
+              {/* Trip Cover Image */}
+              {cover ? (
+                <div className="relative h-48 rounded-2xl overflow-hidden mb-4">
+                  <Image
+                    src={cover}
+                    alt={trip.title}
+                    fill
+                    className="object-cover"
+                  />
                 </div>
+              ) : (
+                <div className="relative h-48 bg-linear-to-r from-blue-500 via-purple-500 to-pink-500 rounded-2xl overflow-hidden mb-4" />
+              )}
 
-                <button className="bg-yellow-400 hover:bg-yellow-500 text-gray-900 font-semibold px-6 py-2 rounded-full transition-colors">
-                  View Trip
-                </button>
+              {/* Trip Details */}
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                  {trip.title}
+                </h2>
+                <p className="text-sm text-gray-500 mb-3">{dateText}</p>
+                <p className="text-gray-700 text-sm leading-relaxed mb-4 line-clamp-3">
+                  {trip.description}
+                </p>
+
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <button className="flex items-center gap-2 text-gray-600 hover:text-red-500 transition-colors">
+                      <Heart className="h-5 w-5" />
+                    </button>
+                    <button className="flex items-center gap-2 text-gray-600 hover:text-blue-500 transition-colors">
+                      <MessageCircle className="h-5 w-5" />
+                    </button>
+                    <button className="flex items-center gap-2 text-gray-600 hover:text-green-500 transition-colors">
+                      <Share2 className="h-5 w-5" />
+                    </button>
+                  </div>
+
+                  <Link
+                    href={`/dashboard/trips-overview/${trip.id}`}
+                    className="bg-yellow-400 hover:bg-yellow-500 text-gray-900 font-semibold px-6 py-2 rounded-full transition-colors"
+                  >
+                    View Trip
+                  </Link>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      ))}
-    </>
+        );
+      })}
+
+      {/* Infinite scroll trigger */}
+      <div ref={observerTarget} className="text-center py-4">
+        {loadingMore && <Spinner label="Loading more trips..." />}
+        {!hasMore && trips.length > 0 && (
+          <p className="text-gray-500 text-sm">
+            You&apos;ve reached the end
+          </p>
+        )}
+      </div>
+    </div>
   );
 }
