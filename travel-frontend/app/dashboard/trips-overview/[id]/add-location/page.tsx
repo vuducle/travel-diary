@@ -39,7 +39,10 @@ const LocationMap = dynamic(
 const addLocationSchema = z.object({
   name: z.string().min(1, 'Location name is required'),
   country: z.string().optional(),
+  state: z.string().optional(),
+  city: z.string().optional(),
   street: z.string().optional(),
+  road: z.string().optional(),
   lat: z.coerce.number().optional(),
   lng: z.coerce.number().optional(),
   coverImage: z.any().optional(),
@@ -57,6 +60,7 @@ type NominatimResult = {
     town?: string;
     village?: string;
     state?: string;
+    county?: string;
     road?: string;
     street?: string;
   };
@@ -150,7 +154,11 @@ export default function AddLocationPage() {
 
   const applyResult = (r: NominatimResult) => {
     const country = r.address?.country || '';
-    const street = r.address?.road || r.address?.street || '';
+    const state = r.address?.state || '';
+    const city =
+      r.address?.city || r.address?.town || r.address?.village || '';
+    const street = r.address?.street || '';
+    const road = r.address?.road || '';
     const primaryName =
       r.name || r.display_name.split(',')[0]?.trim() || '';
     const lat = parseFloat(r.lat);
@@ -158,7 +166,10 @@ export default function AddLocationPage() {
     if (primaryName)
       setValue('name', primaryName, { shouldValidate: true });
     if (country) setValue('country', country);
+    if (state) setValue('state', state);
+    if (city) setValue('city', city);
     if (street) setValue('street', street);
+    if (road) setValue('road', road);
     if (!Number.isNaN(lat)) setValue('lat', lat);
     if (!Number.isNaN(lng)) setValue('lng', lng);
     showToast('Location selected from OpenStreetMap', 'success');
@@ -178,6 +189,18 @@ export default function AddLocationPage() {
     formData.append('tripId', tripId);
     if (data.country) {
       formData.append('country', data.country);
+    }
+    if (data.state) {
+      formData.append('state', data.state);
+    }
+    if (data.city) {
+      formData.append('city', data.city);
+    }
+    if (data.street) {
+      formData.append('street', data.street);
+    }
+    if (data.road) {
+      formData.append('road', data.road);
     }
     if (data.lat) {
       formData.append('lat', String(data.lat));
@@ -389,6 +412,42 @@ export default function AddLocationPage() {
                 {...register('country')}
                 placeholder="e.g., Vietnam"
               />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="state">State/Province</Label>
+                <Input
+                  id="state"
+                  {...register('state')}
+                  placeholder="e.g., Ho Chi Minh"
+                />
+              </div>
+              <div>
+                <Label htmlFor="city">City</Label>
+                <Input
+                  id="city"
+                  {...register('city')}
+                  placeholder="e.g., Ho Chi Minh City"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="street">Street</Label>
+                <Input
+                  id="street"
+                  {...register('street')}
+                  placeholder="e.g., Nguyen Hue Street"
+                />
+              </div>
+              <div>
+                <Label htmlFor="road">Road</Label>
+                <Input
+                  id="road"
+                  {...register('road')}
+                  placeholder="e.g., Nguyen Hue"
+                />
+              </div>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>

@@ -54,7 +54,10 @@ interface Location {
   id: string;
   name: string;
   country?: string;
+  state?: string;
+  city?: string;
   street?: string;
+  road?: string;
   county?: string;
   lat?: number;
   lng?: number;
@@ -398,6 +401,36 @@ export default function LocationDetailPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+              {location.country && (
+                <div className="p-4 rounded-lg bg-linear-to-br from-green-50 to-green-100 dark:from-green-950 dark:to-green-900">
+                  <h3 className="text-xs font-semibold text-green-600 dark:text-green-400 uppercase tracking-wide mb-1">
+                    Country
+                  </h3>
+                  <p className="text-base font-medium">
+                    {location.country}
+                  </p>
+                </div>
+              )}
+              {location.state && (
+                <div className="p-4 rounded-lg bg-linear-to-br from-indigo-50 to-indigo-100 dark:from-indigo-950 dark:to-indigo-900">
+                  <h3 className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 uppercase tracking-wide mb-1">
+                    State/Province
+                  </h3>
+                  <p className="text-base font-medium">
+                    {location.state}
+                  </p>
+                </div>
+              )}
+              {location.city && (
+                <div className="p-4 rounded-lg bg-linear-to-br from-pink-50 to-pink-100 dark:from-pink-950 dark:to-pink-900">
+                  <h3 className="text-xs font-semibold text-pink-600 dark:text-pink-400 uppercase tracking-wide mb-1">
+                    City
+                  </h3>
+                  <p className="text-base font-medium">
+                    {location.city}
+                  </p>
+                </div>
+              )}
               {location.street && (
                 <div className="p-4 rounded-lg bg-linear-to-br from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900">
                   <h3 className="text-xs font-semibold text-blue-600 dark:text-blue-400 uppercase tracking-wide mb-1">
@@ -408,6 +441,16 @@ export default function LocationDetailPage() {
                   </p>
                 </div>
               )}
+              {location.road && (
+                <div className="p-4 rounded-lg bg-linear-to-br from-cyan-50 to-cyan-100 dark:from-cyan-950 dark:to-cyan-900">
+                  <h3 className="text-xs font-semibold text-cyan-600 dark:text-cyan-400 uppercase tracking-wide mb-1">
+                    Road
+                  </h3>
+                  <p className="text-base font-medium">
+                    {location.road}
+                  </p>
+                </div>
+              )}
               {location.county && (
                 <div className="p-4 rounded-lg bg-linear-to-br from-purple-50 to-purple-100 dark:from-purple-950 dark:to-purple-900">
                   <h3 className="text-xs font-semibold text-purple-600 dark:text-purple-400 uppercase tracking-wide mb-1">
@@ -415,16 +458,6 @@ export default function LocationDetailPage() {
                   </h3>
                   <p className="text-base font-medium">
                     {location.county}
-                  </p>
-                </div>
-              )}
-              {location.country && (
-                <div className="p-4 rounded-lg bg-linear-to-br from-green-50 to-green-100 dark:from-green-950 dark:to-green-900">
-                  <h3 className="text-xs font-semibold text-green-600 dark:text-green-400 uppercase tracking-wide mb-1">
-                    Country
-                  </h3>
-                  <p className="text-base font-medium">
-                    {location.country}
                   </p>
                 </div>
               )}
@@ -539,9 +572,12 @@ export default function LocationDetailPage() {
                   lat={location.lat!}
                   lng={location.lng!}
                   locationName={location.name}
-                  street={location.street}
-                  county={location.county}
                   country={location.country}
+                  state={location.state}
+                  city={location.city}
+                  street={location.street}
+                  road={location.road}
+                  county={location.county}
                 />
               </div>
             </CardContent>

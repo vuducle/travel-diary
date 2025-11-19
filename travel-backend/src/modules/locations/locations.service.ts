@@ -140,7 +140,10 @@ export class LocationsService {
       data: {
         name: dto.name,
         country: dto.country,
+        state: dto.state,
+        city: dto.city,
         street: dto.street,
+        road: dto.road,
         lat: typeof dto.lat === 'number' ? dto.lat : undefined,
         lng: typeof dto.lng === 'number' ? dto.lng : undefined,
         coverImage: typeof coverUrl === 'string' ? coverUrl : undefined,

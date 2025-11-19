@@ -14,11 +14,29 @@ export class CreateLocationDto {
   @MaxLength(100)
   country?: string;
 
+  @ApiProperty({ example: 'Ho Chi Minh', required: false })
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  state?: string;
+
+  @ApiProperty({ example: 'Ho Chi Minh City', required: false })
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  city?: string;
+
   @ApiProperty({ example: 'Nguyen Hue Boulevard', required: false })
   @IsOptional()
   @IsString()
   @MaxLength(200)
   street?: string;
+
+  @ApiProperty({ example: 'Nguyen Hue', required: false })
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  road?: string;
 
   @ApiProperty({ example: 10.7769, required: false })
   @IsOptional()

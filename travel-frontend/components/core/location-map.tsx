@@ -40,18 +40,24 @@ interface LocationMapProps {
   lat: number;
   lng: number;
   locationName?: string;
-  street?: string;
-  county?: string;
   country?: string;
+  state?: string;
+  city?: string;
+  street?: string;
+  road?: string;
+  county?: string;
 }
 
 export default function LocationMap({
   lat,
   lng,
   locationName,
-  street,
-  county,
   country,
+  state,
+  city,
+  street,
+  road,
+  county,
 }: LocationMapProps) {
   const position: [number, number] = [lat, lng];
 
@@ -81,6 +87,30 @@ export default function LocationMap({
                     Street:{' '}
                   </span>
                   <span className="wrap-break-word">{street}</span>
+                </div>
+              )}
+              {road && (
+                <div className="text-xs sm:text-sm">
+                  <span className="text-muted-foreground">
+                    Road:{' '}
+                  </span>
+                  <span className="wrap-break-word">{road}</span>
+                </div>
+              )}
+              {city && (
+                <div className="text-xs sm:text-sm">
+                  <span className="text-muted-foreground">
+                    City:{' '}
+                  </span>
+                  <span className="wrap-break-word">{city}</span>
+                </div>
+              )}
+              {state && (
+                <div className="text-xs sm:text-sm">
+                  <span className="text-muted-foreground">
+                    State:{' '}
+                  </span>
+                  <span className="wrap-break-word">{state}</span>
                 </div>
               )}
               {county && (
