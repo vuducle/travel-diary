@@ -76,7 +76,7 @@ export class TripsService {
     });
   }
 
-  async findAllPaginated(page: number, limit: number) {
+  async findAllPaginated(page: number, limit: number, userId?: string) {
     const skip = (page - 1) * limit;
     const [items, total] = await Promise.all([
       this.prisma.trip.findMany({
@@ -88,15 +88,29 @@ export class TripsService {
           user: {
             select: { id: true, name: true, username: true, avatarUrl: true },
           },
-          _count: { select: { locations: true, entries: true } },
+          _count: { select: { locations: true, entries: true, likes: true } },
+          likes: userId
+            ? {
+                where: { userId },
+                select: { userId: true },
+                take: 1,
+              }
+            : false,
         },
       }),
       this.prisma.trip.count({ where: { visibility: 'PUBLIC' } }),
     ]);
 
+    // Map items to include userLiked field
+    const mappedItems = items.map((item) => ({
+      ...item,
+      userLiked: userId ? (item.likes as any[])?.length > 0 : false,
+      likes: undefined, // Remove the likes array from response
+    }));
+
     const totalPages = Math.ceil(total / limit) || 1;
     return {
-      items,
+      items: mappedItems,
       total,
       page,
       limit,

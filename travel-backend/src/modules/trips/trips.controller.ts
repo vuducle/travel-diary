@@ -115,10 +115,15 @@ export class TripsController {
     type: Number,
     description: 'Items per page (default 10, max 100)',
   })
-  findAllPaginated(@Query('page') page = '1', @Query('limit') limit = '10') {
+  findAllPaginated(
+    @Query('page') page = '1',
+    @Query('limit') limit = '10',
+    @Request() req?: ExpressRequest & { user?: { id: string } },
+  ) {
     const p = Math.max(1, parseInt(String(page), 10) || 1);
     const l = Math.min(100, Math.max(1, parseInt(String(limit), 10) || 10));
-    return this.tripsService.findAllPaginated(p, l);
+    const userId = req?.user?.id;
+    return this.tripsService.findAllPaginated(p, l, userId);
   }
 
   @Get(':id')

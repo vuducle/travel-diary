@@ -38,7 +38,8 @@ interface Trip {
   coverImage?: string;
   visibility: 'PUBLIC';
   user: User;
-  _count?: { locations?: number; entries?: number };
+  _count?: { locations?: number; entries?: number; likes?: number };
+  userLiked?: boolean;
 }
 
 interface PaginatedResponse {
@@ -59,6 +60,9 @@ export default function DashboardPage() {
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
+  const [likedTrips, setLikedTrips] = useState<Map<string, number>>(
+    new Map()
+  );
   const observerTarget = useRef<HTMLDivElement>(null);
   const limit = 3;
 
@@ -67,6 +71,61 @@ export default function DashboardPage() {
       router.push('/login');
     }
   }, [token, router]);
+
+  const handleLike = async (
+    tripId: string,
+    currentlyLiked: boolean
+  ) => {
+    // Optimistic update
+    const previousCount = likedTrips.get(tripId) ?? 0;
+    const newCount = currentlyLiked
+      ? previousCount - 1
+      : previousCount + 1;
+    setLikedTrips((prev) => new Map(prev).set(tripId, newCount));
+
+    setTrips((prevTrips) =>
+      prevTrips.map((trip) =>
+        trip.id === tripId
+          ? {
+              ...trip,
+              userLiked: !currentlyLiked,
+              _count: {
+                ...trip._count,
+                likes: newCount,
+              },
+            }
+          : trip
+      )
+    );
+
+    try {
+      if (currentlyLiked) {
+        await api.delete(`/trips/${tripId}/like`);
+      } else {
+        await api.post(`/trips/${tripId}/like`);
+      }
+    } catch (error) {
+      // Revert on error
+      setLikedTrips((prev) =>
+        new Map(prev).set(tripId, previousCount)
+      );
+      setTrips((prevTrips) =>
+        prevTrips.map((trip) =>
+          trip.id === tripId
+            ? {
+                ...trip,
+                userLiked: currentlyLiked,
+                _count: {
+                  ...trip._count,
+                  likes: previousCount,
+                },
+              }
+            : trip
+        )
+      );
+      console.error('Failed to toggle like:', error);
+    }
+  };
 
   const fetchTrips = useCallback(
     async (pageNum: number, append = false) => {
@@ -80,6 +139,28 @@ export default function DashboardPage() {
           `/trips/all?page=${pageNum}&limit=${limit}`
         );
         const data: PaginatedResponse = response.data;
+
+        // Initialize liked trips map on first load only
+        if (!append) {
+          const likesMap = new Map();
+          data.items.forEach((trip) => {
+            if (trip._count?.likes !== undefined) {
+              likesMap.set(trip.id, trip._count.likes);
+            }
+          });
+          setLikedTrips(likesMap);
+        } else {
+          // For appended items, just add new trips to the map
+          setLikedTrips((prev) => {
+            const newMap = new Map(prev);
+            data.items.forEach((trip) => {
+              if (trip._count?.likes !== undefined) {
+                newMap.set(trip.id, trip._count.likes);
+              }
+            });
+            return newMap;
+          });
+        }
 
         if (append) {
           setTrips((prev) => [...prev, ...data.items]);
@@ -276,8 +357,22 @@ export default function DashboardPage() {
 
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
-                    <button className="flex items-center gap-2 text-gray-600 hover:text-red-500 transition-colors">
-                      <Heart className="h-5 w-5" />
+                    <button
+                      onClick={() =>
+                        handleLike(trip.id, trip.userLiked || false)
+                      }
+                      className="flex items-center gap-2 text-gray-600 hover:text-red-500 transition-colors group"
+                    >
+                      <Heart
+                        className={`h-5 w-5 transition-all ${
+                          trip.userLiked
+                            ? 'fill-red-500 text-red-500'
+                            : 'group-hover:scale-110'
+                        }`}
+                      />
+                      <span className="text-sm">
+                        {trip._count?.likes || 0}
+                      </span>
                     </button>
                     <button className="flex items-center gap-2 text-gray-600 hover:text-blue-500 transition-colors">
                       <MessageCircle className="h-5 w-5" />
