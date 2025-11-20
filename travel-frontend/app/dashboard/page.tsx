@@ -21,6 +21,13 @@ import {
   AvatarImage,
 } from '@/components/ui/avatar';
 import Link from 'next/link';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import CommentSection from '@/components/trip/comment-section';
 
 interface User {
   id: string;
@@ -38,7 +45,12 @@ interface Trip {
   coverImage?: string;
   visibility: 'PUBLIC';
   user: User;
-  _count?: { locations?: number; entries?: number; likes?: number };
+  _count?: {
+    locations?: number;
+    entries?: number;
+    likes?: number;
+    comments?: number;
+  };
   userLiked?: boolean;
 }
 
@@ -62,6 +74,10 @@ export default function DashboardPage() {
   const [hasMore, setHasMore] = useState(true);
   const [likedTrips, setLikedTrips] = useState<Map<string, number>>(
     new Map()
+  );
+  const [commentModalOpen, setCommentModalOpen] = useState(false);
+  const [selectedTripId, setSelectedTripId] = useState<string | null>(
+    null
   );
   const observerTarget = useRef<HTMLDivElement>(null);
   const limit = 3;
@@ -125,6 +141,26 @@ export default function DashboardPage() {
       );
       console.error('Failed to toggle like:', error);
     }
+  };
+
+  // Handle comment count change from CommentSection
+  const handleCommentCountChange = (
+    tripId: string,
+    count: number
+  ) => {
+    setTrips((prevTrips) =>
+      prevTrips.map((trip) =>
+        trip.id === tripId
+          ? {
+              ...trip,
+              _count: {
+                ...trip._count,
+                comments: count,
+              },
+            }
+          : trip
+      )
+    );
   };
 
   const fetchTrips = useCallback(
@@ -374,8 +410,17 @@ export default function DashboardPage() {
                         {trip._count?.likes || 0}
                       </span>
                     </button>
-                    <button className="flex items-center gap-2 text-gray-600 hover:text-blue-500 transition-colors">
+                    <button
+                      onClick={() => {
+                        setSelectedTripId(trip.id);
+                        setCommentModalOpen(true);
+                      }}
+                      className="flex items-center gap-2 text-gray-600 hover:text-blue-500 transition-colors"
+                    >
                       <MessageCircle className="h-5 w-5" />
+                      <span className="text-sm">
+                        {trip._count?.comments || 0}
+                      </span>
                     </button>
                     <button className="flex items-center gap-2 text-gray-600 hover:text-green-500 transition-colors">
                       <Share2 className="h-5 w-5" />
@@ -404,6 +449,26 @@ export default function DashboardPage() {
           </p>
         )}
       </div>
+
+      {/* Comment Modal */}
+      <Dialog
+        open={commentModalOpen}
+        onOpenChange={setCommentModalOpen}
+      >
+        <DialogContent className="w-full mx-4 sm:mx-auto sm:max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Comments</DialogTitle>
+          </DialogHeader>
+          {selectedTripId && (
+            <CommentSection
+              tripId={selectedTripId}
+              onCommentCountChange={(count) =>
+                handleCommentCountChange(selectedTripId, count)
+              }
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

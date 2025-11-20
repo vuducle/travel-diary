@@ -88,7 +88,15 @@ export class TripsService {
           user: {
             select: { id: true, name: true, username: true, avatarUrl: true },
           },
-          _count: { select: { locations: true, entries: true, likes: true } },
+          // get all counts and whether the user liked each trip
+          _count: {
+            select: {
+              locations: true,
+              entries: true,
+              likes: true,
+              comments: true,
+            },
+          },
           likes: userId
             ? {
                 where: { userId },
