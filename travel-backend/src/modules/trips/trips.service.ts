@@ -133,6 +133,8 @@ export class TripsService {
       include: {
         locations: true,
         entries: true,
+        likes: true,
+        comments: true,
       },
     });
     if (!trip) throw new NotFoundException('Trip not found');
@@ -351,12 +353,28 @@ export class TripsService {
           select: {
             locations: true,
             entries: true,
+            likes: true,
           },
         },
+        likes: viewerId
+          ? {
+              where: { userId: viewerId },
+              select: { userId: true },
+              take: 1,
+            }
+          : false,
       },
     });
     if (!trip) throw new NotFoundException('Trip not found');
-    return trip;
+
+    // Map to include userLiked field
+    const result = {
+      ...trip,
+      userLiked: viewerId ? (trip.likes as any[])?.length > 0 : false,
+      likes: undefined, // Remove the likes array from response
+    };
+
+    return result;
   }
 
   async findVisibleTripsForUser(

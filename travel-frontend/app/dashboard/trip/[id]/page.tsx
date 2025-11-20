@@ -7,6 +7,7 @@ import TripMapOverview from '@/components/trip/trip-map-overview';
 import { Spinner } from '@/components/ui/spinner';
 import Image from 'next/image';
 import { getAssetUrl } from '@/lib/utils/image-utils';
+import { Heart } from 'lucide-react';
 
 interface Location {
   id: string;
@@ -40,7 +41,9 @@ interface Trip {
   _count?: {
     locations?: number;
     entries?: number;
+    likes?: number;
   };
+  userLiked?: boolean;
 }
 
 export default function TripDetailPage() {
@@ -49,6 +52,7 @@ export default function TripDetailPage() {
   const [trip, setTrip] = useState<Trip | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isLiking, setIsLiking] = useState(false);
 
   useEffect(() => {
     if (!tripId) return;
@@ -69,6 +73,41 @@ export default function TripDetailPage() {
 
     fetchData();
   }, [tripId]);
+
+  const handleLikeToggle = async () => {
+    if (!trip || isLiking) return;
+
+    try {
+      setIsLiking(true);
+
+      if (trip.userLiked) {
+        await api.delete(`/trips/${tripId}/like`);
+      } else {
+        await api.post(`/trips/${tripId}/like`);
+      }
+
+      // Optimistically update the UI
+      setTrip((prev) =>
+        prev
+          ? {
+              ...prev,
+              userLiked: !prev.userLiked,
+              _count: {
+                ...prev._count,
+                likes:
+                  (prev._count?.likes ?? 0) +
+                  (prev.userLiked ? -1 : 1),
+              },
+            }
+          : null
+      );
+    } catch (err) {
+      console.error('Error toggling like:', err);
+      // Optionally show error to user
+    } finally {
+      setIsLiking(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -123,7 +162,7 @@ export default function TripDetailPage() {
               </div>
             ) : null}
 
-            <div className="text-sm text-gray-600 flex items-center gap-4">
+            <div className="text-sm text-gray-600 flex items-center gap-4 flex-wrap">
               <div>
                 <span className="font-semibold text-gray-800">
                   {trip?._count?.locations ??
@@ -137,6 +176,27 @@ export default function TripDetailPage() {
                   {trip?._count?.entries ?? 0}
                 </span>
                 <span className="ml-1"> entries</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleLikeToggle}
+                  disabled={isLiking}
+                  className="flex items-center gap-1 hover:opacity-70 transition-opacity disabled:opacity-50"
+                  aria-label={
+                    trip?.userLiked ? 'Unlike trip' : 'Like trip'
+                  }
+                >
+                  <Heart
+                    className={`w-5 h-5 ${
+                      trip?.userLiked
+                        ? 'fill-red-500 text-red-500'
+                        : 'text-gray-600'
+                    }`}
+                  />
+                  <span className="font-semibold text-gray-800">
+                    {trip?._count?.likes ?? 0}
+                  </span>
+                </button>
               </div>
             </div>
           </div>
