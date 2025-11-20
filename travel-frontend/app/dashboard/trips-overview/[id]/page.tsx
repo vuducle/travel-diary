@@ -19,6 +19,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { Spinner } from '@/components/ui/spinner';
 import type { Trip as StoreTrip } from '@/lib/redux/tripsSlice';
+import TripMapOverview from '@/components/trip/trip-map-overview';
 
 interface Location {
   id: string;
@@ -56,6 +57,12 @@ export default function TripLocationsPage() {
   const [entriesCount, setEntriesCount] = useState<number | null>(
     null
   );
+  const [ownerProfile, setOwnerProfile] = useState<{
+    id: string;
+    name?: string | null;
+    username?: string | null;
+    avatarUrl?: string | null;
+  } | null>(null);
   const params = useParams();
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -97,6 +104,14 @@ export default function TripLocationsPage() {
             (t.visibility as StoreTrip['visibility']) ?? 'PRIVATE',
         };
         setTrip(normalized);
+        // Fetch current user's profile (owner) to display avatar/name in header
+        try {
+          const profileResp = await api.get('/users/profile');
+          setOwnerProfile(profileResp.data ?? null);
+        } catch {
+          // ignore - profile may be unavailable if unauthenticated
+          setOwnerProfile(null);
+        }
         setError(null);
       } catch (err) {
         setError('Failed to fetch trip data.');
@@ -203,64 +218,106 @@ export default function TripLocationsPage() {
     <div className="max-w-7xl mx-auto p-4 sm:p-6 md:p-8">
       <div className="bg-white/30 backdrop-blur-xl rounded-3xl border border-white/40 shadow-xl p-4 sm:p-6 md:p-10">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
-          <h1 className="text-3xl md:text-4xl font-semibold mb-4 md:mb-0">
-            {trip ? trip.title : 'Trip Locations'}
-            <div className="mt-2 text-sm text-gray-600 flex items-center gap-1 mb-2">
-              {locationsCount !== null ? (
-                <span>
-                  {locationsCount} Location
-                  {locationsCount === 1 ? '' : 's'}
-                </span>
-              ) : (
-                <span>
-                  {locations.length} Location
-                  {locations.length === 1 ? '' : 's'}
-                </span>
-              )}{' '}
-              <span className="mx-2">•</span>
-              {entriesCount !== null ? (
-                <span>
-                  {entriesCount} Entr
-                  {entriesCount === 1 ? 'y' : 'ies'}
-                </span>
-              ) : (
-                <span>{'— Entries'}</span>
-              )}
-            </div>
-            <div className="flex items-center justify-center gap-2">
-              {tripId && (
-                <Button
-                  asChild
-                  variant="outline"
-                  size="sm"
-                  className="shrink-0 md:inline-flex"
-                >
-                  <Link href={`/dashboard/trips-overview/`}>
-                    <ArrowLeft className="h-4 w-4 md:mr-1" />
-                    <span className="hidden md:inline">
-                      Back to Overview
-                    </span>
-                  </Link>
-                </Button>
-              )}
-              {/* Btn */}
-              <div className="ml-auto flex items-center gap-2">
-                {trip && <UpdateTripModal trip={trip} />}
-                {trip && <DeleteTripModal trip={trip} />}
-                <Button asChild className="inline-flex">
-                  <Link
-                    href={`/dashboard/trips-overview/${tripId}/add-location`}
-                  >
-                    <Plus className="h-4 w-4 md:mr-1" />
-                    <span className="hidden md:inline">
-                      Add New Location
-                    </span>
-                  </Link>
-                </Button>
+          <div>
+            <h1 className="text-3xl md:text-4xl font-semibold mb-2 md:mb-0">
+              {trip ? trip.title : 'Trip Locations'}
+            </h1>
+
+            {/* Owner + counts row */}
+            <div className="mt-3 flex items-center gap-4">
+              {ownerProfile ? (
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-full overflow-hidden bg-gray-200">
+                    <Image
+                      src={
+                        getAssetUrl(ownerProfile.avatarUrl) ||
+                        '/uploads/avatars/default-avatar.png'
+                      }
+                      alt={
+                        ownerProfile.name ||
+                        ownerProfile.username ||
+                        'Owner'
+                      }
+                      width={40}
+                      height={40}
+                      className="object-cover"
+                    />
+                  </div>
+                  <div className="text-sm text-gray-700">
+                    <div className="font-medium">
+                      {ownerProfile.name ||
+                        ownerProfile.username ||
+                        'You'}
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      Trip owner
+                    </div>
+                  </div>
+                </div>
+              ) : null}
+
+              <div className="text-sm text-gray-600 flex items-center gap-4">
+                <div>
+                  <span className="font-semibold text-gray-800">
+                    {locationsCount !== null
+                      ? locationsCount
+                      : locations.length}
+                  </span>
+                  <span className="ml-1"> locations</span>
+                </div>
+                <div>
+                  <span className="font-semibold text-gray-800">
+                    {entriesCount !== null ? entriesCount : '—'}
+                  </span>
+                  <span className="ml-1"> entries</span>
+                </div>
               </div>
             </div>
-          </h1>
+          </div>
+
+          <div className="flex items-center justify-center gap-2">
+            {tripId && (
+              <Button
+                asChild
+                variant="outline"
+                size="sm"
+                className="shrink-0 md:inline-flex"
+              >
+                <Link href={`/dashboard/trips-overview/`}>
+                  <ArrowLeft className="h-4 w-4 md:mr-1" />
+                  <span className="hidden md:inline">
+                    Back to Overview
+                  </span>
+                </Link>
+              </Button>
+            )}
+            {/* Btn */}
+            <div className="ml-auto flex items-center gap-2">
+              {trip && <UpdateTripModal trip={trip} />}
+              {trip && <DeleteTripModal trip={trip} />}
+              <Button asChild className="inline-flex">
+                <Link
+                  href={`/dashboard/trips-overview/${tripId}/add-location`}
+                >
+                  <Plus className="h-4 w-4 md:mr-1" />
+                  <span className="hidden md:inline">
+                    Add New Location
+                  </span>
+                </Link>
+              </Button>
+            </div>
+          </div>
         </div>
+
+        {/* Map Overview */}
+        {!loading && !error && locations.length > 0 && (
+          <div className="mb-8">
+            <TripMapOverview
+              locations={locations}
+              className="h-[400px] md:h-[500px]"
+            />
+          </div>
+        )}
 
         <div className="grid gap-6 sm:gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
           <Link

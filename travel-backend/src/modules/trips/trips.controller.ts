@@ -11,6 +11,7 @@ import {
   Query,
   UploadedFile,
   UseInterceptors,
+  UnauthorizedException,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
@@ -127,13 +128,19 @@ export class TripsController {
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Get a single trip by id (owned by current user)' })
+  @ApiOperation({
+    summary: 'Get a single trip by id (public view if allowed by visibility)',
+  })
   @ApiParam({ name: 'id', type: 'string' })
   findOne(
-    @Request() req: ExpressRequest & { user: { id: string } },
+    @Request() req: ExpressRequest & { user?: { id: string } },
     @Param('id') id: string,
   ) {
-    return this.tripsService.findOneForUser(req.user.id, id);
+    const viewerId = req?.user?.id;
+    if (!viewerId) {
+      throw new UnauthorizedException('Authentication required');
+    }
+    return this.tripsService.findOneForView(viewerId, id);
   }
 
   @Patch(':id')

@@ -1,9 +1,10 @@
 import { Karla, Merriweather, Geist_Mono } from 'next/font/google';
 import type { Metadata } from 'next';
 import './globals.css';
+import 'react-toastify/dist/ReactToastify.css';
+import 'leaflet/dist/leaflet.css';
 import Footer from '@/components/core/footer';
 import Providers from './providers';
-import 'react-toastify/dist/ReactToastify.css';
 
 // Body copy
 const karla = Karla({

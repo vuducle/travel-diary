@@ -428,7 +428,7 @@ export default function DashboardPage() {
                   </div>
 
                   <Link
-                    href={`/dashboard/trips-overview/${trip.id}`}
+                    href={`/dashboard/trip/${trip.id}`}
                     className="bg-yellow-400 hover:bg-yellow-500 text-gray-900 font-semibold px-6 py-2 rounded-full transition-colors"
                   >
                     View Trip

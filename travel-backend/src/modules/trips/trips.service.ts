@@ -317,7 +317,44 @@ export class TripsService {
   async findOneForView(viewerId: string, tripId: string) {
     const allowed = await this.canReadTrip(viewerId, tripId);
     if (!allowed) throw new NotFoundException('Trip not found');
-    const trip = await this.prisma.trip.findUnique({ where: { id: tripId } });
+    const trip = await this.prisma.trip.findUnique({
+      where: { id: tripId },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            username: true,
+            avatarUrl: true,
+            bio: true,
+          },
+        },
+        locations: {
+          select: {
+            id: true,
+            name: true,
+            country: true,
+            state: true,
+            city: true,
+            street: true,
+            road: true,
+            lat: true,
+            lng: true,
+            coverImage: true,
+            createdAt: true,
+          },
+          orderBy: {
+            createdAt: 'asc',
+          },
+        },
+        _count: {
+          select: {
+            locations: true,
+            entries: true,
+          },
+        },
+      },
+    });
     if (!trip) throw new NotFoundException('Trip not found');
     return trip;
   }
