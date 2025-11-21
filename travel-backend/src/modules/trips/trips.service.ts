@@ -354,6 +354,7 @@ export class TripsService {
             locations: true,
             entries: true,
             likes: true,
+            comments: true,
           },
         },
         likes: viewerId

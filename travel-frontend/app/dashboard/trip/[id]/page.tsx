@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import api from '@/lib/api/client';
 import TripMapOverview from '@/components/trip/trip-map-overview';
+import CommentSection from '@/components/trip/comment-section';
 import { Spinner } from '@/components/ui/spinner';
 import Image from 'next/image';
 import { getAssetUrl } from '@/lib/utils/image-utils';
@@ -42,6 +43,7 @@ interface Trip {
     locations?: number;
     entries?: number;
     likes?: number;
+    comments?: number;
   };
   userLiked?: boolean;
 }
@@ -53,6 +55,8 @@ export default function TripDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isLiking, setIsLiking] = useState(false);
+
+  // Comment section state is managed inside the CommentSection component
 
   useEffect(() => {
     if (!tripId) return;
@@ -226,6 +230,26 @@ export default function TripDetailPage() {
             <p>No locations added to this trip yet.</p>
           </div>
         )}
+
+        {/* Comments */}
+        <div className="mt-8">
+          <CommentSection
+            tripId={tripId}
+            onCommentCountChange={(count: number) =>
+              setTrip((prev) =>
+                prev
+                  ? {
+                      ...prev,
+                      _count: {
+                        ...(prev._count || {}),
+                        comments: count,
+                      },
+                    }
+                  : null
+              )
+            }
+          />
+        </div>
       </div>
     </div>
   );
