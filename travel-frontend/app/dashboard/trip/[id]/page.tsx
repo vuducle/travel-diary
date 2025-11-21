@@ -8,7 +8,22 @@ import CommentSection from '@/components/trip/comment-section';
 import { Spinner } from '@/components/ui/spinner';
 import Image from 'next/image';
 import { getAssetUrl } from '@/lib/utils/image-utils';
-import { Heart } from 'lucide-react';
+import {
+  Heart,
+  ArrowLeft,
+  MapPin,
+  FileText,
+  Calendar,
+  Globe,
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import Link from 'next/link';
 
 interface Location {
   id: string;
@@ -219,6 +234,7 @@ export default function TripDetailPage() {
               Location Overview
             </h2>
             <TripMapOverview
+              tripId={tripId}
               locations={trip.locations}
               className="h-[400px] md:h-[500px]"
             />

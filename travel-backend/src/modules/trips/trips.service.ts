@@ -308,11 +308,21 @@ export class TripsService {
       select: { userId: true, visibility: true },
     });
     if (!trip) return false;
-    if (trip.userId === viewerId) return true;
+
+    // Allow public trips for everyone (including unauthenticated users)
     if (trip.visibility === 'PUBLIC') return true;
+
+    // Require authentication for non-public trips
+    if (!viewerId) return false;
+
+    // Owner can always view their own trip
+    if (trip.userId === viewerId) return true;
+
+    // Check friendship for FRIENDS visibility
     if (trip.visibility === 'FRIENDS') {
       return this.areFriends(viewerId, trip.userId);
     }
+
     return false;
   }
 

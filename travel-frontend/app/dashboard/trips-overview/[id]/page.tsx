@@ -310,9 +310,10 @@ export default function TripLocationsPage() {
         </div>
 
         {/* Map Overview */}
-        {!loading && !error && locations.length > 0 && (
+        {!loading && !error && locations.length > 0 && tripId && (
           <div className="mb-8">
             <TripMapOverview
+              tripId={tripId}
               locations={locations}
               className="h-[400px] md:h-[500px]"
             />

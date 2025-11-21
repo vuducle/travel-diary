@@ -136,10 +136,7 @@ export class TripsController {
     @Request() req: ExpressRequest & { user?: { id: string } },
     @Param('id') id: string,
   ) {
-    const viewerId = req?.user?.id;
-    if (!viewerId) {
-      throw new UnauthorizedException('Authentication required');
-    }
+    const viewerId = req?.user?.id || '';
     return this.tripsService.findOneForView(viewerId, id);
   }
 

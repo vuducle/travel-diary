@@ -3,6 +3,7 @@
 import dynamic from 'next/dynamic';
 import { Spinner } from '@/components/ui/spinner';
 import { useEffect } from 'react';
+import Link from 'next/link';
 
 // Dynamically import map components to avoid SSR issues with Leaflet
 const MapContainer = dynamic(
@@ -45,11 +46,13 @@ interface Location {
 }
 
 interface TripMapOverviewProps {
+  tripId: string;
   locations: Location[];
   className?: string;
 }
 
 export default function TripMapOverview({
+  tripId,
   locations,
   className = '',
 }: TripMapOverviewProps) {
@@ -181,6 +184,12 @@ export default function TripMapOverview({
                 <p className="text-xs text-gray-400 mt-2">
                   {location.lat.toFixed(4)}, {location.lng.toFixed(4)}
                 </p>
+                <Link
+                  href={`/dashboard/trip/${tripId}/location/${location.id}`}
+                  className="text-blue-600 hover:underline mt-2 inline-block text-sm"
+                >
+                  View Location →
+                </Link>
               </div>
             </Popup>
           </Marker>
