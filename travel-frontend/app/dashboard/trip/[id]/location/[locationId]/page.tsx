@@ -430,7 +430,7 @@ export default function LocationDetailPage() {
                   return (
                     <Link
                       key={en.id}
-                      href={`/dashboard/trip/${tripId}/${location.id}/entry/${en.id}`}
+                      href={`/dashboard/trip/${tripId}/location/${location.id}/entry/${en.id}`}
                     >
                       <div className="rounded-2xl bg-white/60 border shadow-sm hover:shadow-md transition-all duration-300 cursor-pointer group">
                         {en.images && en.images.length > 0 ? (
