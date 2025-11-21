@@ -32,12 +32,32 @@ import { Request as ExpressRequest } from 'express';
 
 @ApiTags('Entries')
 @ApiBearerAuth('jwt')
-@UseGuards(JwtAuthGuard)
 @Controller('entries')
 export class EntriesController {
   constructor(private readonly entriesService: EntriesService) {}
 
+  @Get('public')
+  @ApiOperation({
+    summary: 'List entries for a public trip (no authentication required)',
+  })
+  async listPublic(
+    @Query('tripId') tripId?: string,
+    @Query('locationId') locationId?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
+    if (!tripId) {
+      throw new Error('tripId is required for public entry listing');
+    }
+    return this.entriesService.findManyForPublicTrip(tripId, {
+      locationId: locationId || undefined,
+      page: page ? Number(page) : undefined,
+      limit: limit ? Number(limit) : undefined,
+    });
+  }
+
   @Get()
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({
     summary: 'List entries for current user (filter by trip/location)',
   })
@@ -58,6 +78,7 @@ export class EntriesController {
   }
 
   @Get('trip/:tripId/by-location')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({
     summary:
       'List locations in a trip that have entries, including those entries',
@@ -77,6 +98,7 @@ export class EntriesController {
   }
 
   @Get(':id')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Get one entry by id' })
   async getOne(
     @Request() req: ExpressRequest & { user: { id: string } },
@@ -86,6 +108,7 @@ export class EntriesController {
   }
 
   @Post()
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Create an entry with multiple images' })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
@@ -139,6 +162,7 @@ export class EntriesController {
   }
 
   @Patch(':id')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Update an entry; add/remove/reorder images' })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
@@ -186,6 +210,7 @@ export class EntriesController {
   }
 
   @Delete(':id')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Delete an entry and its images' })
   async remove(
     @Request() req: ExpressRequest & { user: { id: string } },
@@ -195,6 +220,7 @@ export class EntriesController {
   }
 
   @Patch(':id/json')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({
     summary: 'JSON-only metadata update for an entry (no files)',
   })

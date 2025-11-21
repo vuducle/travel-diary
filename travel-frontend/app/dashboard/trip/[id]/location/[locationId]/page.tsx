@@ -162,7 +162,7 @@ export default function LocationDetailPage() {
     if (!location?.id) return;
     try {
       setEntriesLoading(true);
-      const resp = await api.get('/entries', {
+      const resp = await api.get('/entries/public', {
         params: { locationId: location.id, tripId },
       });
       const items = resp.data.items || resp.data || [];

@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Injectable,
   NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.module';
 import { promises as fs } from 'fs';
@@ -90,6 +91,64 @@ export class EntriesService {
 
     const where: Prisma.EntryWhereInput = { trip: { is: { userId } } };
     if (tripId) where.tripId = tripId;
+    if (locationId) where.locationId = locationId;
+
+    const [items, total] = await Promise.all([
+      this.prisma.entry.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+        include: { images: { orderBy: { order: 'asc' } }, location: true },
+      }),
+      this.prisma.entry.count({ where }),
+    ]);
+
+    const totalPages = Math.ceil(total / limit) || 1;
+    return {
+      items,
+      total,
+      page,
+      limit,
+      totalPages,
+      hasNextPage: skip + items.length < total,
+    };
+  }
+
+  async findManyForPublicTrip(
+    tripId: string,
+    params: {
+      locationId?: string;
+      page?: number;
+      limit?: number;
+    },
+  ) {
+    const { locationId } = params;
+    const page = Math.max(1, params.page ?? 1);
+    const limit = Math.min(100, Math.max(1, params.limit ?? 10));
+    const skip = (page - 1) * limit;
+
+    // Check if the trip is public
+    const trip = await this.prisma.trip.findUnique({
+      where: { id: tripId },
+      select: { visibility: true },
+    });
+
+    if (!trip) {
+      throw new NotFoundException('Trip not found');
+    }
+
+    if (trip.visibility !== 'PUBLIC') {
+      throw new UnauthorizedException(
+        'This trip is not public. Authentication required.',
+      );
+    }
+
+    if (locationId) {
+      await this.ensureLocationInTrip(tripId, locationId);
+    }
+
+    const where: Prisma.EntryWhereInput = { tripId };
     if (locationId) where.locationId = locationId;
 
     const [items, total] = await Promise.all([
